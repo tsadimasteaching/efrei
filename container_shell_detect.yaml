@@ -1,0 +1,11 @@
+- rule: Shell in Container
+  desc: Detect an interactive shell spawned inside a container
+  condition: >
+    container and proc.name in (bash, sh, zsh, ash) and
+    evt.type = execve and
+    not proc.pname in (docker, containerd, entrypoint)
+  output: >
+    Interactive shell detected inside container (container=%container.name command=%proc.cmdline user=%user.name)
+  priority: NOTICE
+  tags: [container, shell, behavioral]
+
