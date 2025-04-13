@@ -1,0 +1,28 @@
+
+#include <tunables/global>
+
+/usr/bin/docker-default {
+  # Include the default Docker AppArmor profile
+  # Customize this to block writing to /etc
+  # (Note: `docker-default` is Docker's default profile)
+  # You could also copy `/etc/apparmor.d/docker` and modify it
+
+  # Allow everything by default
+  profile docker-deny-write-etc flags=(attach_disconnected) {
+    # Start with full permissions
+    # (We allow most actions but deny write to /etc)
+
+    # Default allow
+    file,
+    network,
+    capability,
+
+    # Deny writing to /etc
+    deny /etc/** w,
+
+    # Required for Docker
+    mount,
+    signal,
+    ptrace,
+  }
+}
