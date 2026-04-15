@@ -87,6 +87,8 @@ Pretend that we have many CPUs
 
 ---
 
+<!-- _class: small -->
+
 # Virtualization
 
 It is the process of creating a virtual representation of something based on software, such as a virtual application, server, storage or network
@@ -94,27 +96,21 @@ It is the process of creating a virtual representation of something based on sof
 - Each VM runs its own OS on top of a **Virtualization layer (Hypervisor)**
 - All running on a **Physical server**
 
+![h:400](./img/virtualization-vm.png)
+
 ---
 
 # Virtualization
 
-| Multicore Processing (MCP) | Virtualization via VMs | Virtualization via Containers |
-|---|---|---|
-| SW1-4 on single OS | SW1-4 each with own OS on VMs | SW1-4 in containers |
-| Multiple cores (CR1-4) | Hypervisor (VMware) | Container Engine (Docker) |
-| Single processor | Host OS (optional) | Host OS (typically Linux) |
 
-> SW = Software Application, OS = Operating System, VM = Virtual Machine, CR = Core, CN = Container
+
+![h:800](./img/virt-types.png)
 
 ---
 
 # Container Ecosystem
 
-- **Open Container Initiative (OCI)** - implements standards
-- **Container Engines**: Docker, Podman, Kata Containers
-- **Container Runtimes**: containerd, CRI-O, gVisor, runc, crun
-- **Container Registries**: Docker Hub, Azure Registry, Google Container Registry
-- **Container Orchestrators**: Kubernetes, Mesos, OpenShift, Docker Swarm
+![h:700](./img/ecosystem.png)
 
 ---
 
@@ -130,21 +126,13 @@ It is the process of creating a virtual representation of something based on sof
 
 ---
 
+<!-- _class: xsmall -->
+
 # All together
 
-```
-docker / Kubernetes
-        |
-  Container Runtime Interface (CRI)
-        |
-  containerd  /  CRI-O
-        |
-  Open Container Initiative (OCI) spec
-        |
-       runc
-        |
-    container
-```
+
+![h:400](./img/cri.png)
+
 
 - **CRI** defines how Kubernetes interacts with different container runtimes
 - **OCI** provides specifications for container images and running containers
