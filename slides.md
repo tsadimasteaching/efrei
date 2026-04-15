@@ -17,6 +17,17 @@ style: |
   section.title h1, section.title h2 {
     color: white;
   }
+  section.small {
+    font-size: 18px;
+  }
+
+  section.xsmall {
+    font-size: 16px;
+  }
+
+  section.xxsmall {
+    font-size: 14px;
+  }
   h1 {
     color: #E8686D;
   }
@@ -61,6 +72,7 @@ style: |
 - Container Sandboxing Approaches
 
 ---
+<!-- _class: small -->
 
 # Virtualization
 
@@ -70,6 +82,8 @@ Pretend that we have many CPUs
 
 - A single CPU is time-sliced across multiple threads (T1, T2, T3)
 - Each thread believes it has its own dedicated processor
+
+![h:400](./img/virtualization.png)
 
 ---
 
