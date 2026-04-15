@@ -30,9 +30,13 @@ style: |
   }
   h1 {
     color: #E8686D;
+    margin-top: 0;
+    margin-bottom: 0.3em;
   }
   h2 {
     color: #E8686D;
+    margin-top: 0;
+    margin-bottom: 0.3em;
   }
   code {
     background-color: #f0f0f0;
@@ -47,6 +51,12 @@ style: |
   }
   table {
     font-size: 0.7em;
+  }
+  img {
+    margin: 0;
+  }
+  p:has(img) {
+    margin: 0;
   }
 ---
 
@@ -129,6 +139,7 @@ It is the process of creating a virtual representation of something based on sof
 <!-- _class: xsmall -->
 
 # All together
+<!-- _class: xsmall -->
 
 
 ![h:400](./img/cri.png)
@@ -141,10 +152,10 @@ It is the process of creating a virtual representation of something based on sof
 ---
 
 # Docker projects
+<!-- _class: xsmall -->
 
-```
-docker --> containerd --> OCI spec --> runc --> container
-```
+![h:300](./img/docker-oci.png)
+
 
 - End users create and run containers with the **docker** command.
 - **containerd** pulls images, manages networking & storage, and uses runc to run containers.
