@@ -1162,6 +1162,8 @@ cat /etc/shadow
 
 ---
 
+<!-- _class: small -->
+
 # Lab: Attacker's Mindset with amicontained
 
 **amicontained** reveals what capabilities, syscalls, and security features are available inside a container -- see the world through an attacker's eyes.
@@ -1283,6 +1285,8 @@ Latest image can have vulnerabilities. Avoid Using `latest` Tag -- it can lead t
 
 ---
 
+<!-- _class: medium -->
+
 # Run as Non-Root User
 
 Limits the damage if the container is compromised.
@@ -1341,6 +1345,7 @@ Tools:
 
 ---
 
+<!-- _class: medium -->
 # SBOM (Software Bill of Materials)
 
 Image scanning detects **known CVEs**, but an SBOM tracks **every dependency** inside the container -- even those without a known vulnerability yet.
@@ -1356,8 +1361,12 @@ Tools:
 
 Formats: **SPDX**, **CycloneDX**
 
+
+[Prismor SBOM Visualization tool](https://www.prismor.dev/sbom-visualizer)
+
 ---
 
+<!-- _class: medium -->
 # Use .dockerignore File
 
 Prevents sensitive files (e.g., .env, .git) from being added to images.
@@ -1397,6 +1406,8 @@ Good:
 - Inject at runtime via environment variables
 
 ---
+
+<!-- _class: medium -->
 
 # External Secret Stores
 
@@ -1441,6 +1452,8 @@ cosign verify myapp:1.0
 
 ---
 
+<!-- _class: medium -->
+
 # Supply Chain Security (SLSA)
 
 Signing images is one piece -- **Supply-chain Levels for Software Artifacts** (SLSA) provides a framework for end-to-end build integrity.
@@ -1481,9 +1494,10 @@ docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE --read-only mysecureimage
 
 ---
 
-<!-- _class: xsmall -->
+<!-- _class: xxsmall -->
 
 # Hardening Docker Compose
+
 
 Apply all runtime hardening in `docker-compose.yaml` -- treat it as a security policy:
 
@@ -1541,7 +1555,7 @@ By limiting the syscalls a process can use, you reduce the attack surface -- whi
 <div class="columns">
 <div class="col">
 
-![w:500](./img/seccomp.png)
+![w:480](./img/seccomp.png)
 
 </div>
 
@@ -1560,6 +1574,8 @@ By limiting the syscalls a process can use, you reduce the attack surface -- whi
 </div>
 
 ---
+
+<!-- _class: medium -->
 
 # eBPF for Runtime Security
 
@@ -1693,6 +1709,8 @@ It checks every action before it happens and asks:
 # Container Sandboxing Approaches
 
 ---
+
+<!-- _class: medium -->
 
 # Host Kernel vs Guest Kernel
 
