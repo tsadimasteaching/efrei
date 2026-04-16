@@ -19,6 +19,10 @@ style: |
   section.title h1, section.title h2 {
     color: white;
   }
+
+   section.medium {
+    font-size: 20px;
+  }
   section.small {
     font-size: 18px;
   }
@@ -718,7 +722,7 @@ ip a
 <div class="columns">
 <div class="col">
 
-![w:350](./img/mount-ns.png)
+![w:500](./img/mount-ns.png)
 
 </div>
 
@@ -747,14 +751,13 @@ ps   # only sees processes in this namespace
 # IPC namespace
 
 
-![w:850](./img/ipc-ns.png)
+![w:100%](./img/ipc-ns.png)
 
-
-- Isolates 
+ 
 - Isolates hostname and domain name
 - Containers can have custom hostnames different from the host system
 
-The IPC namespace provides isolation for process communication mechanisms such as semaphores, message queues, shared memory segments, etc. The processes inside an IPC namespace can't see or interact with the IPC resources of the upper namespace.
+The IPC namespace provides isolation for process communication mechanisms such as semaphores, message queues, shared memory segments, etc. Normally when a process is forked it inherits all the IPC’s which were opened by its parent. The processes inside an IPC namespace can't see or interact with the IPC resources of the upper namespace.
 
 
 
@@ -876,10 +879,10 @@ Docker uses **overlay2** as its default storage driver. It is built on the Linux
 docker info | grep "Storage Driver"
 
 # See the layers of an image
-docker inspect ubuntu --format '{{`{{json .RootFS.Layers}}`}}' | python3 -m json.tool
+docker inspect ubuntu --format '{{json .RootFS.Layers}}' | python3 -m json.tool
 
 # See overlay mounts of a running container
-docker inspect <container> --format '{{`{{.GraphDriver.Data.MergedDir}}`}}'
+docker inspect <container> --format '{{.GraphDriver.Data.MergedDir}}'
 ```
 
 **Security implications:**
@@ -892,6 +895,23 @@ docker inspect <container> --format '{{`{{.GraphDriver.Data.MergedDir}}`}}'
 | **Whiteout files** | Deleted files are hidden, not truly removed — forensic tools can still find them in lower layers |
 
 > Every `RUN`, `COPY`, and `ADD` instruction in a Dockerfile creates a new layer. Minimize layers and never put secrets in any layer.
+
+---
+
+# Linux Containers
+
+<div class="columns">
+<div class="col">
+
+![h:500](./img/distro.png)
+
+</div>
+
+<div class="col">
+
+what is different is each linux distro?
+</div>
+</div>
 
 ---
 
@@ -1166,7 +1186,7 @@ Compare the output across all three: capabilities, seccomp status, namespaces, a
 <!-- _class: small -->
 # Container security spans the full lifecycle
 
-![](./img/lifecycle.png)
+![h:400](./img/lifecycle.png)
 
 **Build Phase** - risks: Malicious Images, Vulnerabilities, Compliance Risks
 
