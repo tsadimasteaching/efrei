@@ -35,6 +35,7 @@ To follow the exercises in this guide, ensure you have the following setup:
     * `grype`: [GitHub](https://github.com/anchore/grype)
     * `trivy`: [GitHub](https://github.com/aquasecurity/trivy)
     * `dive`: [GitHub](https://github.com/wagoodman/dive)
+    * `amicontained`: [GitHub](https://github.com/genuinetools/amicontained)
 * **Environment:** VirtualBox with Ubuntu Server (LTS 24.04.2), 4GB RAM, 2 CPUs.
 * **SSH Config:** Add the following to the end of `/etc/ssh/sshd_config` and restart the service:
   ```text
@@ -180,6 +181,62 @@ mount -t proc proc /proc
 **Privileged Mode:** `--privileged` grants the container access to all host devices.
 
 **Host Mounts:** Mounting `/` into a container allows full host access.
+
+### Lab: Attacker's Mindset with amicontained
+
+`amicontained` is a tool that shows you the runtime security configuration of a container from the inside -- capabilities, namespaces, seccomp status, and more.
+
+#### Step 1: Run in a default container
+
+```bash
+docker run --rm ghcr.io/genuinetools/amicontained
+```
+
+Observe the output:
+- Which capabilities are granted?
+- Is seccomp filtering active?
+- Which namespaces are enabled?
+
+#### Step 2: Run in a privileged container
+
+```bash
+docker run --rm --privileged ghcr.io/genuinetools/amicontained
+```
+
+Compare with Step 1:
+- Notice that **all capabilities** are now granted
+- Seccomp is **disabled**
+- Additional devices and host resources are accessible
+
+#### Step 3: Run in a hardened container
+
+```bash
+docker run --rm \
+  --cap-drop=ALL \
+  --cap-add=NET_BIND_SERVICE \
+  --security-opt=no-new-privileges \
+  --read-only \
+  --user 1000:1000 \
+  ghcr.io/genuinetools/amicontained
+```
+
+Compare with Steps 1 and 2:
+- Only `NET_BIND_SERVICE` capability remains
+- Seccomp is **active**
+- `no-new-privileges` prevents privilege escalation
+
+#### Step 4: Compare side by side
+
+Create a simple comparison table from your observations:
+
+| Feature | Default | Privileged | Hardened |
+|---|---|---|---|
+| Capabilities | ~14 default | ALL (40+) | 1 (NET_BIND_SERVICE) |
+| Seccomp | Enabled (default profile) | Disabled | Enabled (default profile) |
+| no-new-privileges | No | No | Yes |
+| Namespaces | pid, net, mnt, uts, ipc | pid, net, mnt, uts, ipc | pid, net, mnt, uts, ipc |
+
+> **Takeaway:** A default container is not secure. A privileged container is wide open. Always harden your containers by dropping capabilities and enabling security options.
 
 ---
 

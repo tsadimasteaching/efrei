@@ -153,7 +153,9 @@ It is the process of creating a virtual representation of something based on sof
 # Container Standards
 
 **Open Container Initiative** (OCI): a set of standards for containers, describing the image format, runtime, and distribution.
-- low-level specs: standardizes container images, runtimes, and registries.
+- **Image Spec** -- defines how container images are built and structured
+- **Runtime Spec** -- defines how to run a container from an image
+- **Distribution Spec** -- defines how images are pushed/pulled from registries, standardizing registry APIs, image signing, and content discovery
 - NOT specific to kubernetes.
 
 **Container Runtime Interface** (CRI) in Kubernetes: An API that allows you to use different container runtimes in Kubernetes.
@@ -204,6 +206,29 @@ containerd is a high-level container runtime that came from Docker. It implement
 CRI-O is another high-level container runtime which implements the Kubernetes Container Runtime Interface (CRI). It's an alternative to containerd.
 
 Detect which one is used in kubernetes: `kubectl get nodes -o wide`
+
+---
+
+<!-- _class: small -->
+
+# Dockershim Deprecation
+
+Kubernetes **removed the Dockershim** in version **1.24** (May 2022).
+
+- Dockershim was a compatibility layer that allowed Kubernetes to use Docker as a container runtime
+- Docker itself is **not CRI-compliant** -- it was never designed for Kubernetes' Container Runtime Interface
+- Kubernetes now requires a **CRI-compliant runtime** directly: **containerd** or **CRI-O**
+
+> Containers built with Docker still work -- only the runtime interface changed. Docker images are OCI-compliant and compatible with any CRI runtime.
+
+```
+# Before (with Dockershim):
+kubelet -> dockershim -> docker -> containerd -> runc
+
+# After (direct CRI):
+kubelet -> containerd -> runc
+kubelet -> CRI-O -> runc
+```
 
 ---
 <!-- _class: small -->
@@ -723,6 +748,30 @@ echo "100M" | sudo tee /sys/fs/cgroup/my_cgroup/memory.max
 ---
 
 <!-- _class: small -->
+
+# cgroups v1 vs v2
+
+Most modern distributions now use **cgroups v2** (unified hierarchy). Key differences:
+
+| | cgroups v1 | cgroups v2 |
+|---|---|---|
+| **Hierarchy** | Multiple hierarchies (one per controller) | Single unified hierarchy |
+| **Resource control** | Controllers mounted separately | All controllers in one tree |
+| **Delegation** | Complex, error-prone | Safe delegation to unprivileged users |
+| **Pressure info** | Not available | PSI (Pressure Stall Information) support |
+| **Rootless containers** | Limited support | Full support |
+
+```bash
+# Check which version is active:
+stat -fc %T /sys/fs/cgroup/
+# cgroup2fs = v2, tmpfs = v1
+```
+
+> cgroups v2 is required for rootless containers and is the default in recent kernels (5.8+), Ubuntu 21.10+, Fedora 31+, Debian 11+.
+
+---
+
+<!-- _class: small -->
 # Linux vs Windows
 
 
@@ -736,11 +785,16 @@ echo "100M" | sudo tee /sys/fs/cgroup/my_cgroup/memory.max
 
 # Linux containers on Windows
 
-- Windows uses a **Moby VM** (Full Hyper-V Virtual Machine) as a Linux Container Host
-- Docker Client on Windows Container Host communicates with Docker Daemon in the Linux Container Host
-- Windows Process Containers run on NT Kernel
-- Linux Process Containers run on Linux Kernel
-- Both run on top of a hypervisor
+Since containers share a kernel with the host, running Linux containers directly on Windows isn't possible -- virtualization is required.
+
+**Hyper-V backend** (Docker Desktop < 2.3, 2020):
+- Used a **Moby VM** (LinuxKit-based Hyper-V VM) as a Linux Container Host
+- Docker Client on Windows communicated with Docker Daemon inside the Moby VM
+
+**WSL 2 backend** (Docker Desktop 2.3+, default since 2020):
+- Uses a lightweight **WSL 2 utility VM** instead of a full Hyper-V VM
+- Better performance, faster startup, lower memory usage
+- Docker Engine runs directly inside the WSL 2 distribution
 
 ---
 
@@ -763,17 +817,11 @@ echo "100M" | sudo tee /sys/fs/cgroup/my_cgroup/memory.max
 # Attack Surface
 
 ---
+<!-- _class: small -->
 
 # Attack surface
 
-1. **Via Network**
-2. **Host Configuration**
-3. **Host Vulnerabilities**
-4. **Host Application Vulnerabilities**
-5. **Container Orchestration Vulnerabilities, Misconfigurations**
-6. **Compromised Container Images**
-7. **Container Vulnerabilities, Misconfigurations**
-8. **Container Escape**
+![h:550](./img/surface.png)
 
 ---
 
@@ -856,6 +904,8 @@ Keep the host OS and kernel up to date. Use security modules like SELinux/AppArm
 
 ---
 
+<!-- _class: small -->
+
 # Attack via Container Escape
 
 **Attack Vector:** Attacker Gains Privileged Access to Container
@@ -875,7 +925,31 @@ Use runtime security (gVisor, Kata Containers), drop unnecessary capabilities, u
 
 ---
 
+# Lab: Attacker's Mindset with amicontained
+
+**amicontained** reveals what capabilities, syscalls, and security features are available inside a container -- see the world through an attacker's eyes.
+
+```bash
+# Default container -- see what's exposed
+docker run --rm ghcr.io/genuinetools/amicontained
+
+# Privileged container -- everything is open
+docker run --rm --privileged ghcr.io/genuinetools/amicontained
+
+# Hardened container -- minimal attack surface
+docker run --rm --cap-drop=ALL --security-opt=no-new-privileges \
+  --security-opt seccomp=default.json \
+  ghcr.io/genuinetools/amicontained
+```
+
+Compare the output across all three: capabilities, seccomp status, namespaces, and blocked syscalls.
+
+---
+
+<!-- _class: small -->
 # Container security spans the full lifecycle
+
+![](./img/lifecycle.png)
 
 **Build Phase** - risks: Malicious Images, Vulnerabilities, Compliance Risks
 
@@ -999,6 +1073,23 @@ Tools:
 
 ---
 
+# SBOM (Software Bill of Materials)
+
+Image scanning detects **known CVEs**, but an SBOM tracks **every dependency** inside the container -- even those without a known vulnerability yet.
+
+- An SBOM is a complete inventory of all packages, libraries, and versions in an image
+- Essential for **incident response**: when a new CVE drops, you can instantly check which images are affected
+- Required by regulations (US Executive Order 14028, EU CRA)
+
+Tools:
+- **Syft** -- generates SBOMs from container images: `syft <image>`
+- **Trivy** -- can generate SBOMs: `trivy image --format spdx-json <image>`
+- **docker sbom** -- `docker sbom <image>`
+
+Formats: **SPDX**, **CycloneDX**
+
+---
+
 # Use .dockerignore File
 
 Prevents sensitive files (e.g., .env, .git) from being added to images.
@@ -1039,6 +1130,23 @@ Good:
 
 ---
 
+# External Secret Stores
+
+For production, use a dedicated secret management system instead of environment variables or Kubernetes Secrets (which are only base64-encoded).
+
+| Tool | Description |
+|---|---|
+| **HashiCorp Vault** | Dynamic secrets, leasing, encryption-as-a-service |
+| **AWS Secrets Manager** | Managed secrets with automatic rotation |
+| **Azure Key Vault** | Secrets, keys, and certificates for Azure workloads |
+| **GCP Secret Manager** | Managed secrets for Google Cloud |
+
+Kubernetes integration:
+- **External Secrets Operator** -- syncs secrets from external stores into K8s Secrets
+- **CSI Secret Store Driver** -- mounts secrets as volumes from Vault, Azure, AWS, GCP
+
+---
+
 # Set Permissions on Files
 
 Prevents unintended access.
@@ -1062,6 +1170,25 @@ Tools:
 cosign sign myapp:1.0
 cosign verify myapp:1.0
 ```
+
+---
+
+# Supply Chain Security (SLSA)
+
+Signing images is one piece -- **Supply-chain Levels for Software Artifacts** (SLSA) provides a framework for end-to-end build integrity.
+
+**SLSA Levels:**
+- **Level 1** -- Documentation of the build process
+- **Level 2** -- Tamper resistance of the build service (signed provenance)
+- **Level 3** -- Hardened build platform (isolated, ephemeral builders)
+
+**Key practices:**
+- Secure CI/CD runners -- compromised build pipelines are a major attack vector
+- Use ephemeral build environments (no persistent state between builds)
+- Generate and verify **provenance attestations** with Cosign + in-toto
+- Pin dependencies by digest, not tag
+
+https://slsa.dev
 
 ---
 
@@ -1101,8 +1228,19 @@ Seccomp functions as a **system call filter**, acting as a gatekeeper between ap
 By limiting the syscalls a process can use, you reduce the attack surface -- which is critical for sandboxing, containers, and running untrusted code.
 
 ---
+<!-- _class: small -->
 
 # Seccomp modes
+
+<div class="columns">
+<div class="col">
+
+![w:500](./img/seccomp.png)
+
+</div>
+
+<div class="col">
+
 
 **No Filtering** - no seccomp filtering is applied. The process can make any system call.
 
@@ -1111,6 +1249,30 @@ By limiting the syscalls a process can use, you reduce the attack surface -- whi
 **Filter Mode** (most common) - define fine-grained rules (via BPF -- Berkeley Packet Filter). Allow, deny, or trap specific syscalls.
 
 **Block All** - all system calls are blocked. Most restrictive mode.
+
+</div>
+</div>
+
+---
+
+# eBPF for Runtime Security
+
+**eBPF** (Extended Berkeley Packet Filter) allows running sandboxed programs in the Linux kernel without modifying kernel code -- the modern approach to runtime security monitoring.
+
+- Goes beyond Seccomp: observe **file access**, **network connections**, **process execution**, **privilege escalation** in real time
+- No kernel modules or agents required -- runs safely in-kernel
+
+**Tools:**
+- **Falco** -- runtime threat detection using eBPF probes (CNCF project)
+- **Tetragon** -- kernel-level security observability and enforcement (by Cilium/Isovalent)
+- **Tracee** -- runtime security and forensics using eBPF (by Aqua Security)
+
+```bash
+# Example: Falco detects shell spawned in container
+falco -r /etc/falco/falco_rules.yaml
+```
+
+> eBPF is to runtime security what image scanning is to build security.
 
 ---
 
@@ -1147,6 +1309,14 @@ It checks every action before it happens and asks:
 
 ---
 
+# All Together
+
+![h:100%](./img/together.png)
+
+---
+
+<!-- _class: small -->>
+
 # SELinux vs AppArmor
 
 | Feature | Seccomp | AppArmor | SELinux |
@@ -1158,12 +1328,31 @@ It checks every action before it happens and asks:
 | **Ease of Use** | Moderate | Easier (Ubuntu default) | Complex, steep learning curve |
 | **Container Use** | Common in Docker, K8s | Used in Ubuntu, Docker/K8s | Default in RedHat, Fedora, OpenShift |
 | **Portability** | Very portable | Less portable | Low portability |
+| **Enforcement** | Kill or errno on denied syscall | Enforce or complain mode | Enforcing, permissive, or disabled |
+| **Logging** | Via audit subsystem | Via AppArmor logs (`/var/log/syslog`) | Via AVC messages in audit log |
+| **Integration** | Docker, K8s, containerd | Docker, K8s, Snap, LXD | OpenShift, K8s, Podman, libvirt |
 
 ---
 
 <!-- _class: title -->
 
 # Container Sandboxing Approaches
+
+---
+
+# Host Kernel vs Guest Kernel
+
+**Soft multi-tenancy** (shared host kernel):
+- `runc`, `crun` -- use namespaces and cgroups for isolation but **share the host kernel**
+- `gVisor` -- intercepts syscalls in user space but still runs on the host kernel
+- If the kernel is compromised, all containers are affected
+
+**Hard multi-tenancy** (guest kernel):
+- `Kata Containers` -- each container runs inside a **lightweight VM with its own kernel**
+- `Firecracker` -- microVMs with a **dedicated guest kernel** per workload
+- A kernel exploit inside the container does **not** affect the host
+
+> Choose soft multi-tenancy for performance, hard multi-tenancy for stronger isolation (e.g., multi-tenant clouds).
 
 ---
 
@@ -1196,9 +1385,11 @@ docker run --security-opt seccomp=profile.json myimage
 
 # Capabilities Dropping
 
-Linux capabilities can be dropped or added selectively.
+**Capabilities** = a **keyring** -- each key grants permission to perform a specific privileged action (e.g., bind to low ports, change file ownership). You add or remove keys.
 
-Reduces the privileges of the container process.
+**Seccomp** = a **gatekeeper** -- it filters the specific requests (syscalls) a process makes to the kernel. Even if you have the key, the gatekeeper can block the door.
+
+> They are complementary: capabilities control **what you're allowed to do**, seccomp controls **how you can ask the kernel to do it**.
 
 ```bash
 docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE myimage
@@ -1252,3 +1443,26 @@ Rootless mode executes the Docker daemon and containers inside a user namespace.
 
 - https://docs.docker.com/engine/security/rootless/
 - https://docs.docker.com/engine/security/rootless/#known-limitations
+
+---
+
+<!-- _class: small -->
+
+# Production Readiness Checklist
+
+| Security Layer | Action Item |
+|---|---|
+| **Build** | Use distroless or alpine base images |
+| **Build** | Pin image versions by digest |
+| **Build** | Generate SBOM for every image |
+| **Build** | Scan images for CVEs (Trivy, Grype) |
+| **Ship** | Sign images with Cosign |
+| **Ship** | Verify provenance attestations (SLSA) |
+| **Ship** | Use private registries with access controls |
+| **Run** | Run as `USER 1000`, never root |
+| **Run** | Use `--read-only` filesystem |
+| **Run** | Drop ALL capabilities, add only what's needed |
+| **Run** | Apply Seccomp and AppArmor/SELinux profiles |
+| **Run** | Use network policies to restrict traffic |
+| **Run** | Store secrets in external secret stores (Vault) |
+| **Monitor** | Enable eBPF-based runtime detection (Falco, Tetragon) |
