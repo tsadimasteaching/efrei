@@ -44,8 +44,8 @@ style: |
     border-radius: 3px;
   }
   pre {
-    background-color: #2d2d2d;
-    color: #f8f8f2;
+    background-color: #e8e8e8;
+    color: #333333;
     padding: 16px;
     border-radius: 8px;
   }
@@ -57,6 +57,14 @@ style: |
   }
   p:has(img) {
     margin: 0;
+  }
+  .columns {
+    display: flex;
+    gap: 1em;
+    align-items: flex-start;
+  }
+  .columns .col {
+    flex: 1;
   }
 ---
 
@@ -86,6 +94,14 @@ style: |
 
 # Virtualization
 
+<div class="columns">
+<div class="col">
+
+![h:300](./img/virtualization.png)
+
+</div>
+<div class="col">
+
 Resource virtualization
 
 Pretend that we have many CPUs
@@ -93,7 +109,8 @@ Pretend that we have many CPUs
 - A single CPU is time-sliced across multiple threads (T1, T2, T3)
 - Each thread believes it has its own dedicated processor
 
-![h:400](./img/virtualization.png)
+</div>
+</div>
 
 ---
 
@@ -101,12 +118,21 @@ Pretend that we have many CPUs
 
 # Virtualization
 
+<div class="columns">
+<div class="col">
+
+![h:350](./img/virtualization-vm.png)
+
+</div>
+<div class="col">
+
 It is the process of creating a virtual representation of something based on software, such as a virtual application, server, storage or network
 
 - Each VM runs its own OS on top of a **Virtualization layer (Hypervisor)**
 - All running on a **Physical server**
 
-![h:400](./img/virtualization-vm.png)
+</div>
+</div>
 
 ---
 
@@ -120,7 +146,7 @@ It is the process of creating a virtual representation of something based on sof
 
 # Container Ecosystem
 
-![h:700](./img/ecosystem.png)
+![h:500](./img/ecosystem.png)
 
 ---
 
@@ -141,25 +167,29 @@ It is the process of creating a virtual representation of something based on sof
 # All together
 <!-- _class: xsmall -->
 
+<div class="columns">
+<div class="col">
 
 ![h:400](./img/cri.png)
 
+</div>
+<div class="col">
 
 - **CRI** defines how Kubernetes interacts with different container runtimes
 - **OCI** provides specifications for container images and running containers
 - **runc** is an OCI-compliant tool for spawning and running containers
 
----
+</div>
+</div>
 
-# Docker projects
+---
 <!-- _class: xsmall -->
 
-![h:300](./img/docker-oci.png)
+# Docker projects
+
+![h:500](./img/docker-oci.png)
 
 
-- End users create and run containers with the **docker** command.
-- **containerd** pulls images, manages networking & storage, and uses runc to run containers.
-- **runc** does the low-level 'stuff' to create and run containerised processes.
 
 ---
 
@@ -176,8 +206,18 @@ CRI-O is another high-level container runtime which implements the Kubernetes Co
 Detect which one is used in kubernetes: `kubectl get nodes -o wide`
 
 ---
+<!-- _class: small -->
+
 
 # runc
+
+<div class="columns">
+<div class="col">
+
+![h:500](./img/runc.png)
+
+</div>
+<div class="col">
 
 **runc** is an OCI-compatible container runtime. It implements the OCI specification and runs the container processes.
 
@@ -186,6 +226,16 @@ runc is sometimes called the "reference implementation" of OCI.
 **runc** provides all of the low-level functionality for containers, interacting with existing low-level Linux features, like **namespaces** and **control groups**. It uses these features to create and run container processes.
 
 runc is a tool for running containers on Linux. On Windows, the equivalent is Microsoft's Host Compute Service (HCS) with **runhcs**.
+
+</div>
+</div>
+
+---
+<!-- _class: small -->
+
+# Orchestrators
+
+![](./img/orchestrators.png)
 
 ---
 
@@ -217,6 +267,7 @@ runc is a tool for running containers on Linux. On Windows, the equivalent is Mi
 | Resource Management | YES | YES |
 
 ---
+<!-- _class: small -->
 
 # Alternatives
 
@@ -225,6 +276,8 @@ runc is a tool for running containers on Linux. On Windows, the equivalent is Mi
 | Performance | High with caching | Efficient, low overhead | High with system containers | Optimized for concurrent ops | Comparable to Docker | Optimized for OCI images | Low-level tool |
 | Security | Namespaces, cgroups, SELinux | Namespaces, cgroups | Unprivileged containers | Content-addressable | Rootless, daemonless | Rootless build | Namespaces and cgroups |
 | Ease of Use | User-friendly CLI | Lower-level API | Simple REST API | Low-Level Build | Native CLI, similar to Docker | Simple CLI for images | Used indirectly |
+| Community Support | Very large, extensive docs | Large, CNCF-backed | Moderate, Canonical-backed | Growing, part of Moby | Growing, Red Hat-backed | Moderate, Red Hat-backed | Small, OCI reference |
+| Platform Support | Linux, macOS, Windows | Linux, Windows | Linux only | Linux, Windows | Linux, macOS, Windows | Linux only | Linux only |
 
 ---
 
@@ -234,16 +287,28 @@ runc is a tool for running containers on Linux. On Windows, the equivalent is Mi
 
 ---
 
+
+
 # Linux System Calls
+
+
+<div class="columns">
+
+<div class="col">
+
+![w:100%](./img/syscalls.png)
+
+</div>
+
+<div class="col">
+
 
 Applications run in what's called **user space**, which has a lower level of privilege than the operating system kernel.
 
 If an application wants to do something like access a file, communicate using a network, or even find the time of day, it has to **ask the kernel** to do it on the application's behalf. The programmatic interface that the user space code uses to make these requests of the kernel is known as the **system call** or **syscall** interface.
+</div>
 
-```
-User Program -> C library -> [System Call] -> Kernel
-  write()      libc write()                  sys_write()
-```
+</div>
 
 ---
 
@@ -312,7 +377,10 @@ You can also prevent it from being used with the `--no-new-privileges` flag on a
 
 ---
 
+<!-- _class: small -->
 # Linux Capabilities
+
+![h:300](./img/linux-cap.png)
 
 - In traditional Linux systems, the root user (UID 0) has all privileges. However, this "all-or-nothing" model can be risky.
 - **Linux Capabilities** break down root's powers into distinct units, allowing processes to get only the privileges they actually need -- improving security.
@@ -438,17 +506,13 @@ If we drop the `CAP_NET_RAW` capabilities for ping, then the ping utility should
 
 # Docker is based on
 
+![h:300](./img/ns-cgroups.png)
+
 **Namespaces** - Isolate what a process sees - Separate hostname, PID space, network
 
-| Processes | Hard drive | Network |
-|---|---|---|
-| Users | Hostnames | Inter Process Communication |
 
 **Cgroups** - Limit what a process can use - Limit CPU, memory, I/O
 
-| Memory | CPU Usage | HD I/O |
-|---|---|---|
-| Network Bandwidth | | |
 
 ---
 
@@ -475,10 +539,13 @@ unshare --user --pid --map-root-user --mount-proc --fork bash
 
 ---
 
+<!-- _class: small -->
+
 # User namespace
 
-- Isolates user and group IDs
-- Allows a process to have root privileges inside the container but map to a non-root user outside (on the host)
+- Isolates security-related identifiers and attributes: user IDs, group IDs, the root directory, keys, and capabilities
+- A process's user and group IDs can be **different inside and outside** a user namespace
+- A process can have a normal unprivileged user ID outside a user namespace while having **user ID 0 inside** the namespace
 
 ```bash
 $ id
@@ -489,20 +556,53 @@ $ unshare -U /bin/bash
 uid=65534(nobody) gid=65534(nobody) groups=65534(nobody)
 ```
 
-If a user ID has no mapping inside the namespace, system calls return the value `65534` (overflowuid).
+If a user ID has no mapping inside the namespace, system calls return the value defined in `/proc/sys/kernel/overflowuid`, which defaults to `65534`. Initially, a user namespace has no user ID mapping, so all user IDs inside the namespace map to this value.
 
 ---
 
+# User namespace
+
+![](./img/user-ns.png)
+
+---
+
+<!-- _class: small -->
+
 # Process namespaces
+
+<div class="columns">
+<div class="col">
+
+![w:500](./img/process-ns.png)
+
+</div>
+
+<div class="col">
+
 
 - Isolates process IDs
 - Processes in one namespace can't see or affect processes in another. Each container can have its own process tree, starting from PID 1.
 
 **PID namespace isolation**: processes in the child namespace have no way of knowing of the parent process's existence. However, processes in the parent namespace have a complete view of processes in the child namespace.
 
+</div>
+</div>
+
 ---
 
+<!-- _class: small -->
 # Network namespaces
+
+
+<div class="columns">
+<div class="col">
+
+![w:350](./img/net-ns.png)
+
+</div>
+
+<div class="col">
+
 
 - Isolates network resources like interfaces, IP addresses, ports, and routing tables
 - Containers can have separate network stacks
@@ -515,9 +615,24 @@ sudo unshare --net /bin/bash
 ip a
 ```
 
+</div>
+</div>
+
 ---
 
+<!-- _class: small -->
+
 # mount namespace
+
+<div class="columns">
+<div class="col">
+
+![w:350](./img/mount-ns.png)
+
+</div>
+
+<div class="col">
+
 
 - Isolates filesystem mount points
 - Each container can have its own view of the filesystem
@@ -531,14 +646,27 @@ sudo unshare --fork --pid --mount-proc /bin/bash
 ps   # only sees processes in this namespace
 ```
 
+</div>
+</div>  
+
 ---
+
+<!-- _class: small -->
 
 # IPC namespace
 
+
+![w:850](./img/ipc-ns.png)
+
+
+- Isolates 
 - Isolates hostname and domain name
 - Containers can have custom hostnames different from the host system
 
 The IPC namespace provides isolation for process communication mechanisms such as semaphores, message queues, shared memory segments, etc. The processes inside an IPC namespace can't see or interact with the IPC resources of the upper namespace.
+
+
+
 
 ---
 
@@ -551,7 +679,18 @@ The IPC namespace provides isolation for process communication mechanisms such a
 
 ---
 
+<!-- _class: small -->
+
 # cgroups
+
+<div class="columns">
+<div class="col">
+
+![w:500](./img/cgroups.png)
+
+</div>
+
+<div class="col">
 
 A control group (cgroup) is a Linux kernel feature that limits, accounts for, and isolates the resource usage (CPU, memory, disk I/O, network) of a collection of processes.
 
@@ -561,6 +700,9 @@ Cgroups provide:
 - **Prioritization** -- control resource usage compared to other cgroups
 - **Accounting** -- resource limits are monitored and reported
 - **Control** -- change the status (frozen, stopped, restarted) of all processes in a cgroup
+
+</div>
+</div>
 
 ---
 
@@ -580,13 +722,13 @@ echo "100M" | sudo tee /sys/fs/cgroup/my_cgroup/memory.max
 
 ---
 
+<!-- _class: small -->
 # Linux vs Windows
 
-**Architecture In Linux:**
-Docker Client -> REST Interface -> Docker Engine (libcontainerd, libnetwork) -> containerd + runc -> Control Groups, Namespaces, Layer Capabilities (AUFS, btrfs, zfs)
 
-**Architecture In Windows:**
-Docker Client -> REST Interface -> Docker Engine (libcontainerd, libnetwork) -> runhcs -> Host Compute Service -> Control Groups (Job objects), Namespaces (Object Namespace, Process Table), Layer Capabilities (Registry, Union-like filesystem extensions)
+![w:100%](./img/linux-win.png)
+
+
 
 > runhcs is a fork of runc
 
