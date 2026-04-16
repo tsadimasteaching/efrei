@@ -37,3 +37,9 @@ This repository contains educational materials for the **Container Security** co
 - Tools: `strace`, `trivy`, `grype`, `dive`, `amicontained`
 
 See [Notes.md](Notes.md) for full setup instructions.
+
+export slides to pdf
+
+```bash
+marp slides.md --pdf --allow-local-files -o slides.pdf
+```
