@@ -2,6 +2,8 @@
 marp: true
 theme: default
 paginate: true
+header: 'Container Security :: Harokopio University * Efrei'
+footer: 'Anargyros Tsadimas'
 style: |
   section {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -925,6 +927,31 @@ Use runtime security (gVisor, Kata Containers), drop unnecessary capabilities, u
 
 ---
 
+<!-- _class: small -->
+
+# Attack via Docker Socket
+
+**Attack Vector:** Mounting `/var/run/docker.sock` into a container
+
+The Docker socket is the API endpoint for the Docker daemon. Mounting it into a container gives **full control of Docker on the host** -- equivalent to root access.
+
+```bash
+# Mount the socket into a container
+docker run -v /var/run/docker.sock:/var/run/docker.sock -it docker sh
+
+# From inside: create a privileged container that mounts the host root
+docker run -v /:/host -it alpine chroot /host
+
+# You now have a root shell on the host
+cat /etc/shadow
+```
+
+**Why it matters:** CI/CD tools, monitoring agents, and deployment tools often request socket access. Granting it = granting root.
+
+**Mitigation:** Avoid socket mounts. If required: use `:ro`, restrict capabilities, or use alternatives like Sysbox.
+
+---
+
 # Lab: Attacker's Mindset with amicontained
 
 **amicontained** reveals what capabilities, syscalls, and security features are available inside a container -- see the world through an attacker's eyes.
@@ -1213,6 +1240,44 @@ docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE --read-only mysecureimage
 
 ---
 
+<!-- _class: xsmall -->
+
+# Hardening Docker Compose
+
+Apply all runtime hardening in `docker-compose.yaml` -- treat it as a security policy:
+
+```yaml
+services:
+  web:
+    image: nginx:alpine
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+    pids_limit: 50
+```
+
+| Setting | Default | Hardened |
+|---|---|---|
+| Capabilities | ~14 | Only what's needed |
+| Filesystem | Read-write | Read-only + tmpfs |
+| Memory | Unlimited | Capped |
+| PID limit | Unlimited | Capped |
+| Privilege escalation | Allowed | Blocked |
+
+---
+
 <!-- _class: title -->
 
 # Securing the Container Runtime Process
@@ -1274,6 +1339,53 @@ sudo docker exec tetragon tetra getevents -o compact
 ```
 
 > eBPF is to runtime security what image scanning is to build security.
+
+---
+
+<!-- _class: xsmall -->
+
+# Tetragon in Production
+
+**How teams use eBPF security tools in real production systems:**
+
+| Use Case | What it does |
+|---|---|
+| **Runtime threat detection** | Detect shells in containers, crypto miners, reverse shells, access to `/etc/shadow` or cloud credentials. Events feed into SIEMs (Splunk, Elastic). |
+| **Runtime enforcement** | Kill malicious processes at the kernel level (`Sigkill` action) before they complete -- e.g., block kernel module loading from containers. |
+| **Network observability** | L3/L4/L7 flow visibility across pods (via Hubble). Detect unexpected egress, audit service-to-service communication. |
+| **Compliance & audit** | Complete record of every process, file access, and network connection. Satisfies SOC 2, PCI-DSS, HIPAA audit requirements. |
+| **Incident response** | Full process ancestry (parent → child chains with args) shows exactly how an attacker moved through the system. |
+| **Supply chain attack detection** | Detect behavioral drift -- e.g., a Node.js container suddenly running `curl \| bash`. |
+
+**Typical deployment:** DaemonSet on every K8s node (Helm), TracingPolicies as CRDs, events exported to Elastic/Splunk/Grafana Loki.
+
+---
+
+<!-- _class: small -->
+
+# Docker Bench for Security
+
+An official Docker script that audits your host against the **CIS Docker Benchmark** -- dozens of best practice checks in one command:
+
+```bash
+docker run --rm --net host --pid host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /etc:/etc:ro \
+  -v /usr/lib/systemd:/usr/lib/systemd:ro \
+  -v /etc/docker:/etc/docker:ro \
+  docker/docker-bench-security
+```
+
+**Checks include:**
+
+| Section | What it audits |
+|---|---|
+| Host Configuration | Kernel params, audit rules, Docker partition |
+| Docker Daemon | TLS, logging, ulimits, userland proxy |
+| Container Runtime | Privileged mode, capabilities, read-only fs, PID limits |
+| Container Images | Root user, HEALTHCHECK, content trust |
+
+Output: `[PASS]` `[WARN]` `[INFO]` per check. Run regularly in CI/CD.
 
 ---
 

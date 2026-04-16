@@ -1,7 +1,8 @@
 # Securing Containers
 
 **Author:** Anargyros Tsadimas
-**Role:** Teaching Laboratory Staff, DevOps & Software Engineer
+
+**Role:** Assistant Professor, DevOps & Software Engineer
 
 ---
 
@@ -17,22 +18,25 @@
 * [Part 2: Containers Threat Modeling and Attack Surface](#part-2-containers-threat-modeling-and-attack-surface)
     * [Run a vulnerable container](#run-a-vulnerable-container)
     * [Simulate privilege escalation with host mounts](#simulate-privilege-escalation-with-host-mounts)
+    * [Docker socket attack](#docker-socket-attack)
     * [Lab: Attacker's Mindset with amicontained](#lab-attackers-mindset-with-amicontained)
 * [Part 3: Runtime Hardening](#part-3-runtime-hardening)
     * [Capabilities](#capabilities)
     * [Seccomp](#seccomp)
     * [AppArmor](#apparmor)
-* [Part 4: Secure Image Build and Scanning](#part-4-secure-image-build-and-scanning)
+    * [Hardening Docker Compose](#hardening-docker-compose)
     * [Compare Ubuntu vs Alpine base images](#compare-ubuntu-vs-alpine-base-images)
     * [Build and scan a deliberately vulnerable image](#build-and-scan-a-deliberately-vulnerable-image)
     * [Apply security rules to a real application](#apply-security-rules-to-a-real-application)
     * [Inspect image layers with Dive](#inspect-image-layers-with-dive)
 * [Part 5: Security Tools](#part-5-security-tools)
+    * [eBPF (Extended Berkeley Packet Filter)](#ebpf-extended-berkeley-packet-filter)
+    * [Tetragon](#tetragon)
     * [Explore Tetragon](#explore-tetragon)
     * [Create custom tracing policies](#create-custom-tracing-policies)
     * [Detect shell spawned in containers](#detect-shell-spawned-in-containers)
     * [Exercise: Monitor a real application with Tetragon](#exercise-monitor-a-real-application-with-tetragon)
-* [Part 6: Sandboxing](#part-6-sandboxing)
+    * [Docker Bench for Security](#docker-bench-for-security)
     * [Rootless Docker](#rootless-docker)
 
 ---
@@ -45,19 +49,73 @@ To follow the exercises in this guide, ensure you have the following setup:
 * **Security Tools:**
     * `strace`: [Install Guide](https://ioflood.com/blog/install-strace-command-linux/)
     * `grype`: [GitHub](https://github.com/anchore/grype)
+    ```bash
+    curl -sSfL https://get.anchore.io/grype | sudo sh -s -- -b /usr/local/bin
+    ```
     * `trivy`: [GitHub](https://github.com/aquasecurity/trivy)
     * `dive`: [GitHub](https://github.com/wagoodman/dive)
+
+    ```bash
+    DIVE_VERSION=$(curl -sL "https://api.github.com/repos/wagoodman/dive/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    curl -fOL "https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.deb"
+    sudo apt install ./dive_${DIVE_VERSION}_linux_amd64.deb
+    ```
     * `amicontained`: [GitHub](https://github.com/genuinetools/amicontained)
 * **Environment:** VirtualBox with Ubuntu Server (LTS 24.04.2), 4GB RAM, 2 CPUs.
-* **SSH Config:** Add the following to the end of `/etc/ssh/sshd_config` and restart the service:
-  ```text
-  Match User stud
-  PasswordAuthentication yes
-  ```
+
 
 ---
 
 ## Part 1: Linux Fundamentals
+
+### Unix Permissions, setuid, and setgid
+
+Linux file permissions follow a three-group model: **owner**, **group**, and **others**. Each group can have **read** (`r`), **write** (`w`), and **execute** (`x`) permissions:
+
+```
+- r w x r w x r w x
+|  |       |       |
+|  |       |       +-- Read, write, and execute for all other users
+|  |       +---------- Read, write, and execute for group owner
+|  +------------------ Read, write, and execute for file owner
++--------------------- File type (- = regular, d = directory)
+```
+
+Numeric (octal) notation: each permission has a value — `r=4`, `w=2`, `x=1`. For example, `754` means:
+- **7** (owner): rwx = 4+2+1
+- **5** (group): r-x = 4+0+1
+- **4** (others): r-- = 4+0+0
+
+Beyond the standard rwx bits, Linux has three **special permission bits**:
+
+**setuid (Set User ID)** — When set on an executable, the process runs with the **file owner's** privileges, not the caller's. The classic example is `/usr/bin/passwd`:
+
+```bash
+$ ls -l /usr/bin/passwd
+-rwsr-xr-x 1 root root 68208 /usr/bin/passwd
+```
+
+The `s` in the owner's execute position (`rws`) means setuid is active. Any user who runs `passwd` temporarily becomes root — which is necessary because only root can write to `/etc/shadow`. You set it with `chmod 4755` (the leading `4` enables setuid).
+
+**setgid (Set Group ID)** — When set on an executable, the process runs with the **file group's** privileges. When set on a **directory**, new files created inside inherit the directory's group (instead of the creator's default group). This is useful for shared project directories.
+
+```bash
+$ ls -l /usr/bin/wall
+-rwxr-sr-x 1 root tty 19024 /usr/bin/wall
+```
+
+The `s` in the group's execute position means setgid is active. You set it with `chmod 2755` (the leading `2` enables setgid).
+
+**Sticky bit** — When set on a directory, only the file owner (or root) can delete or rename files inside, even if others have write permission. The classic example is `/tmp`:
+
+```bash
+$ ls -ld /tmp
+drwxrwxrwt 26 root root 1191936 /tmp
+```
+
+The `t` at the end indicates the sticky bit. Without it, any user with write access to `/tmp` could delete anyone else's files. You set it with `chmod 1777` (the leading `1` enables sticky bit).
+
+**Security implications:** setuid is a common privilege escalation vector. If you set setuid on a shell (e.g., bash), any user who runs it gets a root shell. Container image scanners (like Trivy) flag files with the setuid bit. You can prevent setuid escalation in Docker with `--no-new-privileges`.
 
 ### Explore setuid
 
@@ -65,7 +123,8 @@ setuid allows a user to execute a binary with the permissions of the file owner 
 
 **1. Create `rootshell.c`**
 
-```c
+```bash
+cat > rootshell.c << 'EOF'
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -77,6 +136,7 @@ int main() {
     system("/bin/sh");
     return 0;
 }
+EOF
 ```
 
 **2. Compile and set permissions**
@@ -98,7 +158,8 @@ Capabilities divide root privileges into smaller units.
 
 **1. Create `filefixer.c`**
 
-```c
+```bash
+cat > filefixer.c << 'EOF'
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -117,6 +178,7 @@ int main(int argc, char *argv[]) {
     printf("Ownership changed to UID 969 and GID 969.\n");
     return 0;
 }
+EOF
 ```
 
 **2. Test and Grant Capability**
@@ -406,6 +468,40 @@ docker run -v /:/mnt -it debian bash
 ls /mnt/root
 ```
 
+### Docker socket attack
+
+The Docker socket (`/var/run/docker.sock`) is the API endpoint that the Docker CLI uses to communicate with the Docker daemon. If you mount it into a container, that container can control Docker on the host — including creating new privileged containers, accessing the host filesystem, or even replacing running containers.
+
+This is one of the **most common real-world misconfigurations**. Many CI/CD tools, monitoring agents, and deployment tools request socket access, and granting it is equivalent to giving root on the host.
+
+**1. Mount the Docker socket into a container:**
+
+```bash
+docker run -v /var/run/docker.sock:/var/run/docker.sock -it docker sh
+```
+
+You're now inside a container that has the `docker` CLI and access to the host's Docker daemon.
+
+**2. From inside the container, take over the host:**
+
+```bash
+docker run -v /:/host -it alpine chroot /host
+```
+
+You now have a **root shell on the host** — you can read `/etc/shadow`, install packages, modify systemd services, etc. All from inside what was supposed to be an isolated container.
+
+**3. Verify host access:**
+
+```bash
+cat /etc/hostname
+cat /etc/shadow
+ls /root
+exit
+exit
+```
+
+> **Takeaway:** Never mount the Docker socket into a container unless absolutely necessary. If you must (e.g., for CI/CD), use read-only mounts (`-v /var/run/docker.sock:/var/run/docker.sock:ro`) and restrict the container's capabilities. Better alternatives include using Docker's TCP API with TLS mutual authentication, or tools like [Sysbox](https://github.com/nestybox/sysbox) that provide Docker-in-Docker without socket access.
+
 ### Lab: Attacker's Mindset with amicontained
 
 `amicontained` is a tool that shows you the runtime security configuration of a container from the inside -- capabilities, namespaces, seccomp status, and more.
@@ -595,24 +691,22 @@ sudo apparmor_status
 **2. Create a test script (`test.sh`):**
 
 ```bash
+cat > test.sh << 'EOF'
 #!/bin/sh
 echo "test" > /etc/testfile
-```
-
-```bash
+EOF
 chmod +x test.sh
 ```
 
 **3. Create a Dockerfile (`apparmor.Dockerfile`):**
 
-```dockerfile
+```bash
+cat > apparmor.Dockerfile << 'EOF'
 FROM alpine
 COPY test.sh /test.sh
 RUN chmod +x /test.sh
 CMD ["/test.sh"]
-```
-
-```bash
+EOF
 docker build -t apparmor-test -f apparmor.Dockerfile .
 ```
 
@@ -680,6 +774,90 @@ docker run --rm -it --security-opt apparmor:/usr/bin/docker-default//docker-deny
 
 The write to `/etc/testfile` will be **denied** by AppArmor.
 
+### Hardening Docker Compose
+
+In production, most applications use Docker Compose. All the runtime hardening options from this section can be applied in `docker-compose.yaml`. This exercise creates a hardened Compose file for a simple web application.
+
+**1. Create a hardened `docker-compose.yaml`:**
+
+```bash
+cat > docker-compose-hardened.yaml << 'EOF'
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    # Drop all capabilities, add only what nginx needs
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+    # Read-only root filesystem
+    read_only: true
+    # Temp directories for nginx to write to
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    # Prevent privilege escalation
+    security_opt:
+      - no-new-privileges:true
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+        reservations:
+          memory: 64M
+    # Limit number of processes (prevent fork bombs)
+    pids_limit: 50
+    # No access to host network
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+EOF
+```
+
+**2. Run and verify the hardened container:**
+
+```bash
+docker compose -f docker-compose-hardened.yaml up -d
+```
+
+**3. Verify the hardening is applied:**
+
+```bash
+docker inspect $(docker compose -f docker-compose-hardened.yaml ps -q web) | grep -A 5 CapDrop
+docker exec $(docker compose -f docker-compose-hardened.yaml ps -q web) sh -c "touch /test" 2>&1 || echo "Read-only filesystem: PASS"
+curl -s http://localhost:8080 | head -5
+```
+
+**4. Compare with an unhardened version:**
+
+| Setting | Unhardened (default) | Hardened |
+|---|---|---|
+| Capabilities | ~14 default | Only NET_BIND_SERVICE + 3 |
+| Filesystem | Read-write | Read-only + tmpfs |
+| Memory limit | Unlimited | 128MB |
+| CPU limit | Unlimited | 0.5 cores |
+| PID limit | Unlimited | 50 |
+| Privilege escalation | Allowed | Blocked |
+
+**5. Cleanup:**
+
+```bash
+docker compose -f docker-compose-hardened.yaml down
+```
+
+> **Takeaway:** Always apply security options in your Compose files. In production, treat `docker-compose.yaml` as a security policy — every service should have `cap_drop: [ALL]`, `read_only: true`, `security_opt: [no-new-privileges:true]`, and resource limits.
+
 ---
 
 ## Part 4: Secure Image Build and Scanning
@@ -688,23 +866,21 @@ The write to `/etc/testfile` will be **denied** by AppArmor.
 
 **Build a Ubuntu-based image (`mypythonubuntu.Dockerfile`):**
 
-```dockerfile
+```bash
+cat > mypythonubuntu.Dockerfile << 'EOF'
 FROM ubuntu
 RUN apt update -y && apt install curl python3 -y
-```
-
-```bash
+EOF
 docker build -t mypythonubuntu -f mypythonubuntu.Dockerfile .
 ```
 
 **Build an Alpine-based image:**
 
-```dockerfile
+```bash
+cat > myalpine.Dockerfile << 'EOF'
 FROM alpine
 RUN apk add curl python3
-```
-
-```bash
+EOF
 docker build -t myalpine -f myalpine.Dockerfile .
 ```
 
@@ -800,6 +976,95 @@ Look for:
 
 ## Part 5: Security Tools
 
+### eBPF (Extended Berkeley Packet Filter)
+
+**eBPF** is a technology that allows running sandboxed programs directly inside the Linux kernel — without modifying kernel source code or loading kernel modules. Originally designed for network packet filtering (BPF, 1992), it has evolved into a general-purpose in-kernel virtual machine used for security, observability, and networking.
+
+**How eBPF works:**
+
+1. A user-space program writes an eBPF program (usually in C or using libraries like libbpf)
+2. The program is compiled to eBPF bytecode
+3. The kernel **verifier** checks the bytecode for safety (no infinite loops, no invalid memory access, bounded execution)
+4. If verified, the program is JIT-compiled to native machine code and attached to a **hook point** in the kernel
+5. Every time the hook fires (e.g., a syscall, a network packet, a file open), the eBPF program runs and can collect data or make decisions
+
+**eBPF hook points relevant to security:**
+
+| Hook type | What it monitors | Example |
+|---|---|---|
+| **kprobes** | Any kernel function entry/exit | `security_file_open`, `security_bprm_check` |
+| **tracepoints** | Predefined stable kernel events | `sched:sched_process_exec`, `syscalls:sys_enter_open` |
+| **LSM hooks** | Linux Security Module decisions | File access, capability checks, task creation |
+| **XDP** | Network packets at the driver level | Packet filtering before the kernel network stack |
+
+**Why eBPF matters for container security:**
+- **No kernel modules** — unlike older tools that need to compile and load `.ko` files for each kernel version, eBPF programs are portable via BTF (BPF Type Format) and CO-RE (Compile Once – Run Everywhere)
+- **Low overhead** — eBPF programs run in kernel space, avoiding costly context switches between kernel and user space
+- **Safety guaranteed** — the verifier ensures eBPF programs cannot crash the kernel, access arbitrary memory, or run forever
+- **Real-time visibility** — observe every process execution, file access, network connection, and privilege change as it happens
+
+**eBPF security tools ecosystem:**
+
+| Tool | Maintainer | Focus |
+|---|---|---|
+| **Tetragon** | Cilium / Isovalent (CNCF) | Runtime security enforcement and observability using kprobes and LSM hooks |
+| **Falco** | Sysdig (CNCF) | Rule-based runtime threat detection with a large community rule library |
+| **Tracee** | Aqua Security | Runtime security and forensics with event tracing |
+| **Cilium** | Isovalent (CNCF) | eBPF-based networking, load balancing, and network policy for Kubernetes |
+
+### Tetragon
+
+**Tetragon** is a CNCF runtime security tool that uses eBPF to monitor and enforce security policies at the kernel level. It was created by Isovalent (the company behind Cilium) and open-sourced in 2022.
+
+**Key concepts:**
+
+- **Process lifecycle tracking** — Tetragon hooks into the kernel's process execution path to track every process start and exit, including full process ancestry (parent → child chains)
+- **TracingPolicy** — a Kubernetes CRD (or standalone YAML) that defines which kernel events to monitor. You specify a kernel function (kprobe), the arguments to capture, and selectors to filter events
+- **Selectors** — filter events by argument values (`Prefix`, `Postfix`, `Equal`), by namespace (`matchNamespaces` to target only containers), or by capabilities and binary paths
+- **Actions** — what to do when a policy matches: `Post` (report), `Sigkill` (kill the process), `Override` (change the return value)
+
+**Tetragon architecture:**
+
+```
+┌─────────────────────────────────────────┐
+│              User Space                  │
+│  ┌──────────┐  ┌──────────────────────┐ │
+│  │  tetra   │  │  tetragon daemon     │ │
+│  │  (CLI)   │──│  - loads policies    │ │
+│  │          │  │  - exports events    │ │
+│  └──────────┘  │  - gRPC API          │ │
+│                └──────────┬───────────┘ │
+├───────────────────────────┼─────────────┤
+│              Kernel Space │             │
+│  ┌────────────────────────▼──────────┐  │
+│  │         eBPF Programs             │  │
+│  │  - kprobes on kernel functions    │  │
+│  │  - process execution tracking     │  │
+│  │  - file access monitoring         │  │
+│  │  - network observability          │  │
+│  └───────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+```
+
+**What Tetragon can detect:**
+- Process execution inside containers (shell spawning, unexpected binaries)
+- Sensitive file access (`/etc/shadow`, `/etc/passwd`, private keys)
+- Network connections to suspicious destinations
+- Privilege escalation (capability changes, setuid usage)
+- Kernel module loading
+
+**Tetragon vs Falco:**
+
+| Feature | Tetragon | Falco |
+|---|---|---|
+| **Technology** | Pure eBPF (kprobes, LSM hooks) | eBPF or kernel module |
+| **Policy format** | TracingPolicy YAML (CRDs in K8s) | Rules in YAML with Falco syntax |
+| **Enforcement** | Can kill processes (`Sigkill` action) | Detection only (alerts) |
+| **Overhead** | Very low (in-kernel filtering) | Low to moderate |
+| **Community rules** | Smaller but growing | Large library of community rules |
+| **Kubernetes** | Native CRD integration via Helm | Supports K8s via Falcosidekick |
+| **Portability** | Needs BTF-enabled kernel (5.8+) | Broader kernel support |
+
 ### Explore Tetragon
 
 Tetragon is an eBPF-based runtime security tool by Cilium/Isovalent. Unlike Falco (which requires kernel modules or large BPF programs), Tetragon uses modern eBPF directly — no kernel module compilation needed. It monitors process execution, file access, and network activity in real time.
@@ -854,9 +1119,10 @@ Tetragon uses **TracingPolicy** YAML files to define what kernel events to monit
 
 **1. Write below `/etc` policy:**
 
-Save the following as `write-etc-policy.yaml`:
+Create `write-etc-policy.yaml`:
 
-```yaml
+```bash
+cat > write-etc-policy.yaml << 'EOF'
 apiVersion: cilium.io/v1alpha1
 kind: TracingPolicy
 metadata:
@@ -876,6 +1142,7 @@ spec:
         - "/etc"
       matchActions:
       - action: Post
+EOF
 ```
 
 **Understanding the policy:**
@@ -927,9 +1194,10 @@ sudo docker stop tetragon
 
 **1. Create a shell detection policy:**
 
-Save the following as `container-shell-detect-policy.yaml`:
+Create `container-shell-detect-policy.yaml`:
 
-```yaml
+```bash
+cat > container-shell-detect-policy.yaml << 'EOF'
 apiVersion: cilium.io/v1alpha1
 kind: TracingPolicy
 metadata:
@@ -957,6 +1225,7 @@ spec:
         - "host_ns"
       matchActions:
       - action: Post
+EOF
 ```
 
 **Understanding the policy:**
@@ -1034,6 +1303,64 @@ You'll see all process execution events across the Budibase containers. Look for
 - Network-related processes starting
 
 > **Tetragon vs Falco:** Tetragon uses pure eBPF (no kernel modules), has lower overhead, and integrates natively with Kubernetes via CRDs. Falco has a larger rule library and more community rules. Both are excellent for runtime security monitoring.
+
+### Docker Bench for Security
+
+Docker Bench for Security is an official script from Docker that checks your host and Docker daemon configuration against the CIS (Center for Internet Security) Docker Benchmark. It audits dozens of best practices in one command — a quick way to find misconfigurations.
+
+**1. Run Docker Bench:**
+
+```bash
+docker run --rm --net host --pid host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /etc:/etc:ro \
+  -v /usr/lib/systemd:/usr/lib/systemd:ro \
+  -v /etc/docker:/etc/docker:ro \
+  docker/docker-bench-security
+```
+
+**2. Understand the output:**
+
+The script checks categories based on the CIS Docker Benchmark:
+
+| Section | What it checks |
+|---|---|
+| **1 - Host Configuration** | Kernel parameters, audit rules, Docker partition |
+| **2 - Docker Daemon** | TLS, logging, ulimits, live restore, userland proxy |
+| **3 - Docker Files** | File permissions on Docker socket, config files, certificates |
+| **4 - Container Images** | Root user, HEALTHCHECK, content trust |
+| **5 - Container Runtime** | Privileged mode, capabilities, read-only fs, PID limits, resource constraints |
+| **7 - Docker Swarm** | Swarm mode security settings |
+
+Each check is marked as:
+- `[PASS]` — configuration follows the recommendation
+- `[WARN]` — potential security issue found
+- `[INFO]` — informational finding
+- `[NOTE]` — manual verification needed
+
+**3. Test with a running container:**
+
+Start an insecure container, then re-run the benchmark:
+
+```bash
+docker run -d --name insecure --privileged debian sleep 300
+docker run --rm --net host --pid host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /etc:/etc:ro \
+  -v /usr/lib/systemd:/usr/lib/systemd:ro \
+  -v /etc/docker:/etc/docker:ro \
+  docker/docker-bench-security
+```
+
+Look for warnings in **Section 5** about the `insecure` container — it will flag the `--privileged` flag, missing resource limits, and more.
+
+**4. Cleanup:**
+
+```bash
+docker stop insecure && docker rm insecure
+```
+
+> **Tip:** Run Docker Bench regularly in CI/CD or as a cron job. Pipe the output to a file (`> bench-results.txt`) and track improvements over time.
 
 ---
 
