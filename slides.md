@@ -78,10 +78,12 @@ style: |
 
 ---
 
+<!-- _class: small -->
 # Contents
 
 - Virtualization: Containers vs VMs
 - Containers Standards
+- Docker Commands Cheatsheet
 - Container Internals: The Kernel Foundations
   - Namespaces
   - Control Groups
@@ -99,7 +101,7 @@ style: |
 <div class="columns">
 <div class="col">
 
-![h:300](./img/virtualization.png)
+![h:200](./img/virtualization.png)
 
 </div>
 <div class="col">
@@ -142,7 +144,7 @@ It is the process of creating a virtual representation of something based on sof
 
 
 
-![h:800](./img/virt-types.png)
+![h:500](./img/virt-types.png)
 
 ---
 
@@ -152,6 +154,7 @@ It is the process of creating a virtual representation of something based on sof
 
 ---
 
+<!-- _class: small -->
 # Container Standards
 
 **Open Container Initiative** (OCI): a set of standards for containers, describing the image format, runtime, and distribution.
@@ -308,6 +311,66 @@ runc is a tool for running containers on Linux. On Windows, the equivalent is Mi
 
 ---
 
+<!-- _class: xxsmall -->
+
+# Docker Commands Cheatsheet
+
+<div class="columns">
+<div class="col">
+
+**Images**
+| Command | Description |
+|---|---|
+| `docker build -t name .` | Build image from Dockerfile |
+| `docker images` | List local images |
+| `docker pull image:tag` | Pull image from registry |
+| `docker rmi image` | Remove an image |
+| `docker tag src dst` | Tag an image |
+| `docker push image:tag` | Push image to registry |
+
+**Containers**
+| Command | Description |
+|---|---|
+| `docker run -it image sh` | Run interactive container |
+| `docker run -d image` | Run in background |
+| `docker ps` | List running containers |
+| `docker ps -a` | List all containers |
+| `docker stop name` | Stop a container |
+| `docker rm name` | Remove a container |
+
+</div>
+<div class="col">
+
+**Inspect & Debug**
+| Command | Description |
+|---|---|
+| `docker exec -it name sh` | Shell into running container |
+| `docker logs name` | View container logs |
+| `docker inspect name` | Show container details |
+| `docker top name` | Show running processes |
+| `docker stats` | Live resource usage |
+
+**Volumes & Networks**
+| Command | Description |
+|---|---|
+| `docker volume create vol` | Create a volume |
+| `docker run -v vol:/data` | Mount a volume |
+| `docker run -v /host:/ctr` | Bind mount host path |
+| `docker network ls` | List networks |
+| `docker network create net` | Create a network |
+
+**Compose**
+| Command | Description |
+|---|---|
+| `docker compose up -d` | Start services |
+| `docker compose down` | Stop and remove |
+| `docker compose logs` | View logs |
+
+</div>
+</div>
+
+---
+
 <!-- _class: title -->
 
 # Container Internals: The Kernel Foundations
@@ -339,6 +402,7 @@ If an application wants to do something like access a file, communicate using a 
 
 ---
 
+<!-- _class: small -->
 # Linux System Calls
 
 There are some 300+ different system calls:
@@ -774,6 +838,64 @@ stat -fc %T /sys/fs/cgroup/
 ---
 
 <!-- _class: small -->
+
+# OverlayFS and Docker's Storage Driver
+
+Docker uses **overlay2** as its default storage driver. It is built on the Linux kernel's **OverlayFS** — a **union filesystem** that merges multiple directory layers into a single unified view.
+
+**How it works:**
+
+```
+┌─────────────────────────────┐  ← What the container sees
+│       Merged (union view)   │     (reads from upper first,
+│                             │      falls back to lower)
+├─────────────────────────────┤
+│   Upper (container layer)   │  ← Read-write: new/modified files go here
+├─────────────────────────────┤
+│   Lower (image layers)      │  ← Read-only: base image + each Dockerfile step
+│   ┌───────────────────────┐ │
+│   │ Layer 3: COPY app.py  │ │
+│   │ Layer 2: RUN apt ...  │ │
+│   │ Layer 1: FROM ubuntu  │ │
+│   └───────────────────────┘ │
+└─────────────────────────────┘
+```
+
+- **Lower layers** are read-only and shared across containers using the same image
+- **Upper layer** is per-container — writes use **copy-on-write** (CoW): the file is copied up from a lower layer, then modified
+- **Deleting** a file creates a **whiteout** marker in the upper layer to hide the lower file
+
+---
+
+<!-- _class: small -->
+
+# OverlayFS: Why It Matters
+
+```bash
+# Check Docker's storage driver
+docker info | grep "Storage Driver"
+
+# See the layers of an image
+docker inspect ubuntu --format '{{`{{json .RootFS.Layers}}`}}' | python3 -m json.tool
+
+# See overlay mounts of a running container
+docker inspect <container> --format '{{`{{.GraphDriver.Data.MergedDir}}`}}'
+```
+
+**Security implications:**
+
+| Concern | Details |
+|---|---|
+| **Layer leaking** | Secrets added in early layers persist even if deleted later — each layer is stored independently |
+| **Shared layers** | All containers from the same image share lower layers — efficient but a compromised image affects all |
+| **Copy-on-write overhead** | First write to a large file copies the entire file to the upper layer |
+| **Whiteout files** | Deleted files are hidden, not truly removed — forensic tools can still find them in lower layers |
+
+> Every `RUN`, `COPY`, and `ADD` instruction in a Dockerfile creates a new layer. Minimize layers and never put secrets in any layer.
+
+---
+
+<!-- _class: small -->
 # Linux vs Windows
 
 
@@ -992,6 +1114,7 @@ Compare the output across all three: capabilities, seccomp status, namespaces, a
 
 ---
 
+<!-- _class: small -->
 # Rules
 
 - Use Minimal Base Images
@@ -1021,6 +1144,36 @@ Use:
 ```dockerfile
 FROM python:3.11-alpine
 ```
+
+---
+
+<!-- _class: small -->
+
+# The `scratch` Image
+
+`scratch` is a special empty image — it has **no filesystem, no shell, no libraries, nothing**. It doesn't even count as a layer.
+
+To run anything on `scratch`, your binary must be **statically compiled** — all libraries linked into the executable itself, since there is no libc or any shared library in the image.
+
+```c
+// hello.c
+#include <stdio.h>
+int main() { printf("Hello from scratch!\n"); return 0; }
+```
+
+```bash
+gcc -o hello -static hello.c
+```
+
+```dockerfile
+FROM scratch
+ADD hello /
+CMD ["/hello"]
+```
+
+**Why `-static`?** Normally, `gcc` produces a **dynamically linked** binary that depends on shared libraries (`libc.so`, `ld-linux.so`, etc.) at runtime. Without `-static`, the binary will fail with `no such file or directory` because `scratch` has none of these libraries. Static compilation embeds everything into a single self-contained binary.
+
+> `scratch` produces the **smallest possible images** — ideal for Go, Rust, or C programs.
 
 ---
 
