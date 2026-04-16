@@ -15,13 +15,25 @@
     * [Exploring and Using Linux Control Groups (cgroups v2)](#exploring-and-using-linux-control-groups-cgroups-v2)
     * [Exercise: Create an isolated environment without Docker](#exercise-create-an-isolated-environment-without-docker)
 * [Part 2: Containers Threat Modeling and Attack Surface](#part-2-containers-threat-modeling-and-attack-surface)
+    * [Run a vulnerable container](#run-a-vulnerable-container)
+    * [Simulate privilege escalation with host mounts](#simulate-privilege-escalation-with-host-mounts)
+    * [Lab: Attacker's Mindset with amicontained](#lab-attackers-mindset-with-amicontained)
 * [Part 3: Runtime Hardening](#part-3-runtime-hardening)
     * [Capabilities](#capabilities)
     * [Seccomp](#seccomp)
     * [AppArmor](#apparmor)
 * [Part 4: Secure Image Build and Scanning](#part-4-secure-image-build-and-scanning)
+    * [Compare Ubuntu vs Alpine base images](#compare-ubuntu-vs-alpine-base-images)
+    * [Build and scan a deliberately vulnerable image](#build-and-scan-a-deliberately-vulnerable-image)
+    * [Apply security rules to a real application](#apply-security-rules-to-a-real-application)
+    * [Inspect image layers with Dive](#inspect-image-layers-with-dive)
 * [Part 5: Security Tools](#part-5-security-tools)
+    * [Explore Tetragon](#explore-tetragon)
+    * [Create custom tracing policies](#create-custom-tracing-policies)
+    * [Detect shell spawned in containers](#detect-shell-spawned-in-containers)
+    * [Exercise: Monitor a real application with Tetragon](#exercise-monitor-a-real-application-with-tetragon)
 * [Part 6: Sandboxing](#part-6-sandboxing)
+    * [Rootless Docker](#rootless-docker)
 
 ---
 
@@ -367,7 +379,7 @@ Since we used `--mount` (a separate mount namespace), the `/proc` mount is autom
 ### Run a vulnerable container
 
 ```bash
-docker run -it --rm --name vuln --privileged ubuntu bash
+docker run -it --rm --name vuln --privileged debian bash
 ```
 
 Install and start an SSH server inside the container:
@@ -390,7 +402,7 @@ nmap $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end
 **Host Mounts:** Mounting `/` into a container allows full host access.
 
 ```bash
-docker run -v /:/mnt -it ubuntu bash
+docker run -v /:/mnt -it debian bash
 ls /mnt/root
 ```
 
@@ -401,7 +413,7 @@ ls /mnt/root
 #### Step 1: Run in a default container
 
 ```bash
-docker run --rm ghcr.io/genuinetools/amicontained
+docker run --rm jess/amicontained amicontained
 ```
 
 Observe the output:
@@ -412,7 +424,7 @@ Observe the output:
 #### Step 2: Run in a privileged container
 
 ```bash
-docker run --rm --privileged ghcr.io/genuinetools/amicontained
+docker run --rm --privileged jess/amicontained amicontained
 ```
 
 Compare with Step 1:
@@ -429,7 +441,7 @@ docker run --rm \
   --security-opt=no-new-privileges \
   --read-only \
   --user 1000:1000 \
-  ghcr.io/genuinetools/amicontained
+  jess/amicontained amicontained
 ```
 
 Compare with Steps 1 and 2:
@@ -456,7 +468,27 @@ Create a simple comparison table from your observations:
 
 ### Capabilities
 
-Restrict container privileges using security features.
+Traditionally, Linux divided processes into two categories: **privileged** (UID 0 / root) with full access, and **unprivileged** (everyone else). This all-or-nothing model is dangerous — if a process needs just one root power (e.g., binding to port 80), it gets *all* root powers.
+
+**Linux capabilities** break root privileges into ~40 distinct units. Each capability grants a specific power:
+
+| Capability | What it allows |
+|---|---|
+| `CAP_NET_BIND_SERVICE` | Bind to ports below 1024 |
+| `CAP_SYS_ADMIN` | Mount filesystems, configure namespaces, etc. (the "new root") |
+| `CAP_NET_RAW` | Use raw sockets (ping, packet sniffing) |
+| `CAP_SYS_PTRACE` | Trace/debug other processes |
+| `CAP_DAC_OVERRIDE` | Bypass file read/write/execute permission checks |
+| `CAP_CHOWN` | Change file ownership |
+| `CAP_KILL` | Send signals to any process |
+| `CAP_SETUID` / `CAP_SETGID` | Change process UID/GID |
+
+Docker grants ~14 capabilities by default — enough for most applications but far less than full root. The principle of **least privilege** says: drop all capabilities, then add back only what your application needs.
+
+Capabilities are tracked in three sets:
+- **Bounding set** — upper limit of capabilities the process can ever gain
+- **Effective set** — capabilities currently active
+- **Permitted set** — capabilities the process is allowed to activate
 
 **View default capabilities:**
 
@@ -482,7 +514,26 @@ docker run --rm --cap-drop=ALL --cap-add=NET_BIND_SERVICE alpine sh
 
 ### Seccomp
 
-Filter system calls using a profile.
+**Seccomp** (Secure Computing Mode) is a Linux kernel feature that filters which **system calls** a process can make. Since every interaction with the kernel goes through syscalls (`read`, `write`, `open`, `execve`, `mount`, `ptrace`, etc.), restricting them is a powerful defense layer.
+
+There are two modes:
+- **Strict mode** — only allows `read`, `write`, `exit`, and `sigreturn`. Almost nothing works.
+- **Filter mode** (seccomp-bpf) — uses BPF programs to allow/deny specific syscalls. This is what Docker uses.
+
+Docker applies a **default seccomp profile** that blocks ~60 dangerous syscalls out of ~300+ total, including:
+
+| Blocked syscall | Risk if allowed |
+|---|---|
+| `mount` / `umount` | Mount host filesystems from inside the container |
+| `reboot` | Reboot the host |
+| `kexec_load` | Load a new kernel |
+| `ptrace` | Debug/inspect other processes |
+| `personality` | Change execution domain (used in exploits) |
+| `unshare` | Create new namespaces (container escape) |
+
+You can create **custom profiles** to further restrict or relax the defaults. Profiles are JSON files that specify an action per syscall.
+
+> **Capabilities vs Seccomp:** Capabilities control *what privileges* a process has. Seccomp controls *what kernel functions* it can call. They are complementary — use both for defense in depth.
 
 **1. Create a seccomp profile:**
 
@@ -511,6 +562,28 @@ docker run --rm --security-opt seccomp=seccomp.json alpine sh -c "apk add --no-c
 `strace` will fail because `ptrace` is blocked.
 
 ### AppArmor
+
+**AppArmor** (Application Armor) is a Linux Security Module (LSM) that restricts what individual programs can do — which files they can read/write, which network operations they can perform, and which capabilities they can use. It works alongside capabilities and seccomp as an additional layer of defense.
+
+**How it works:**
+- AppArmor uses **profiles** — text files that define access rules for a specific program
+- Profiles are loaded into the kernel and enforced at the LSM level
+- Each profile can be in one of two modes:
+  - **Enforce** — violations are blocked and logged
+  - **Complain** — violations are logged but allowed (useful for profile development)
+
+**AppArmor vs SELinux:**
+
+| Feature | AppArmor | SELinux |
+|---|---|---|
+| Model | Path-based (rules reference file paths) | Label-based (rules reference security labels) |
+| Complexity | Simpler to write and understand | More powerful but steeper learning curve |
+| Default on | Ubuntu, Debian, SUSE | RHEL, Fedora, CentOS |
+| Profile scope | Per-program | System-wide mandatory access control |
+
+**Docker and AppArmor:** Docker automatically applies a default AppArmor profile (`docker-default`) to all containers. This profile prevents containers from writing to `/proc` and `/sys`, loading kernel modules, mounting filesystems, and accessing raw sockets. You can override it with custom profiles using `--security-opt apparmor=<profile-name>`.
+
+> **Defense in depth:** Capabilities limit *what powers* a process has. Seccomp limits *what syscalls* it can make. AppArmor limits *what resources* (files, network, etc.) it can access. Together, they form three complementary layers of runtime hardening.
 
 **1. Install AppArmor:**
 
@@ -566,6 +639,24 @@ Save the following as `/etc/apparmor.d/docker-deny-write-etc`:
   }
 }
 ```
+
+**Line-by-line explanation:**
+
+| Line | Meaning |
+|---|---|
+| `#include <tunables/global>` | Includes global variable definitions (e.g., `@{HOME}`, `@{PROC}`). Standard boilerplate for all AppArmor profiles. |
+| `/usr/bin/docker-default {` | The **parent profile** — this attaches to the Docker default binary path. It acts as a container for the nested child profile. |
+| `profile docker-deny-write-etc` | Defines a **named child profile** called `docker-deny-write-etc`. This is the actual profile applied to the container. |
+| `flags=(attach_disconnected)` | Allows the profile to work on processes whose namespace path is disconnected from the initial namespace — **required for Docker containers** because they run in separate mount namespaces. Without this flag, AppArmor would refuse to confine the container. |
+| `file,` | Grants **all file operations** by default (read, write, execute, create, delete). Specific `deny` rules below override this. |
+| `network,` | Allows **all network operations** (TCP, UDP, raw sockets, etc.). |
+| `capability,` | Allows **all Linux capabilities**. The container's capabilities are already restricted by Docker — AppArmor doesn't need to duplicate that. |
+| `deny /etc/** w,` | **Explicitly denies** write access to anything under `/etc/`. The `**` glob matches all files and subdirectories recursively. The `w` permission means write. `deny` rules always take precedence over allow rules — even though `file,` allows everything, this blocks `/etc/` writes. |
+| `mount,` | Allows mount operations — needed by Docker for setting up the container's filesystem (overlay mounts, `/proc`, `/dev`, etc.). |
+| `signal,` | Allows sending and receiving signals — needed for Docker to manage container processes (`SIGTERM`, `SIGKILL`, etc.). |
+| `ptrace,` | Allows process tracing — needed by Docker for process management and health checks. |
+
+> **Key concept:** AppArmor uses a **default-deny with explicit allows** or **default-allow with explicit denies** model. This profile uses the latter — it allows everything (`file, network, capability`) and then specifically denies writing to `/etc/`. The `deny` keyword is special: it **always wins** over allow rules and cannot be overridden.
 
 You can download it:
 ```bash
@@ -709,112 +800,195 @@ Look for:
 
 ## Part 5: Security Tools
 
-### Explore Falco
+### Explore Tetragon
 
-Falco monitors runtime activity and detects anomalies using kernel-level instrumentation.
+Tetragon is an eBPF-based runtime security tool by Cilium/Isovalent. Unlike Falco (which requires kernel modules or large BPF programs), Tetragon uses modern eBPF directly — no kernel module compilation needed. It monitors process execution, file access, and network activity in real time.
 
-**1. Run Falco as a container:**
+**1. Run Tetragon as a container:**
 
 ```bash
-sudo docker run --rm -i -t --name falco --privileged \
-  -v /var/run/docker.sock:/host/var/run/docker.sock \
-  -v /dev:/host/dev -v /proc:/host/proc:ro -v /boot:/host/boot:ro \
-  -v /lib/modules:/host/lib/modules:ro -v /usr:/host/usr:ro -v /etc:/host/etc:ro \
-  falcosecurity/falco:0.40.0
+sudo docker run -d --name tetragon --rm \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  quay.io/cilium/tetragon:v1.3.0
 ```
 
-**2. Trigger an alert:**
+**2. Observe events in real time:**
 
-In another terminal, run:
+```bash
+sudo docker exec tetragon tetra getevents -o compact
+```
+
+You'll see all process starts (`🚀 process`) and exits (`💥 exit`) across the system. Open another terminal and run any command — it will appear in the Tetragon output immediately.
+
+**3. Trigger a specific event:**
+
+In another terminal:
 
 ```bash
 sudo cat /etc/shadow
 ```
 
-Go back to the Falco terminal — you'll see a warning about sensitive file access.
+Back in the Tetragon output, you'll see:
 
-### Create custom rules
-
-**1. Write below `/etc` rule:**
-
-Stop Falco with Ctrl-C. Download the custom rule:
-
-```bash
-wget https://raw.githubusercontent.com/tsadimasteaching/efrei/refs/heads/main/falco_custom_rules.yaml
+```
+🚀 process  /usr/bin/cat /etc/shadow
+💥 exit     /usr/bin/cat /etc/shadow 0
 ```
 
-Contents of `falco_custom_rules.yaml`:
+Press `Ctrl+C` to stop watching events.
+
+**4. Stop Tetragon:**
+
+```bash
+sudo docker stop tetragon
+```
+
+### Create custom tracing policies
+
+Tetragon uses **TracingPolicy** YAML files to define what kernel events to monitor. Policies hook into kernel functions (kprobes) and filter by arguments.
+
+**1. Write below `/etc` policy:**
+
+Save the following as `write-etc-policy.yaml`:
 
 ```yaml
-- rule: Write below etc
-  desc: An attempt to write to /etc directory
-  condition: >
-    (evt.type in (open,openat,openat2) and evt.is_open_write=true and fd.typechar='f' and fd.num>=0)
-    and fd.name startswith /etc
-  output: >
-    File below /etc opened for writing
-    (file=%fd.name pcmdline=%proc.pcmdline gparent=%proc.aname[2]
-    evt_type=%evt.type user=%user.name user_uid=%user.uid
-    process=%proc.name proc_exepath=%proc.exepath
-    parent=%proc.pname command=%proc.cmdline terminal=%proc.tty %container.info)
-  priority: WARNING
-  tags: [filesystem, mitre_persistence]
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: write-etc
+spec:
+  kprobes:
+  - call: "security_file_open"
+    syscall: false
+    args:
+    - index: 0
+      type: "file"
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: "Prefix"
+        values:
+        - "/etc"
+      matchActions:
+      - action: Post
 ```
 
-**2. Run Falco with the custom rule:**
+**Understanding the policy:**
+
+| Field | Meaning |
+|---|---|
+| `kprobes` | Hook into kernel function calls |
+| `call: "security_file_open"` | The LSM hook called when any file is opened |
+| `args[0].type: "file"` | Capture the file path argument |
+| `matchArgs[0].operator: "Prefix"` | Only match files whose path starts with... |
+| `values: ["/etc"]` | ...the `/etc` directory |
+| `matchActions: Post` | Report the event after it happens |
+
+**2. Run Tetragon with the policy:**
 
 ```bash
-sudo touch /etc/test_file_falco_rule
-sudo docker run --name falco --rm -i -t --privileged \
-  -v $(pwd)/falco_custom_rules.yaml:/etc/falco/falco_rules.local.yaml \
-  -v /var/run/docker.sock:/host/var/run/docker.sock \
-  -v /dev:/host/dev -v /proc:/host/proc:ro -v /boot:/host/boot:ro \
-  -v /lib/modules:/host/lib/modules:ro -v /usr:/host/usr:ro -v /etc:/host/etc:ro \
-  falcosecurity/falco:0.40.0
+sudo docker run -d --name tetragon --rm \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v $(pwd)/write-etc-policy.yaml:/etc/tetragon/tetragon.tp.d/write-etc-policy.yaml \
+  quay.io/cilium/tetragon:v1.3.0
 ```
 
-In another terminal, write to `/etc` and observe Falco alerting.
+**3. Watch for events and trigger:**
+
+```bash
+sudo docker exec tetragon tetra getevents -o compact
+```
+
+In another terminal, write to `/etc`:
+
+```bash
+sudo touch /etc/test_file_tetragon
+```
+
+You'll see Tetragon report the file open event on `/etc/test_file_tetragon`.
+
+**4. Stop Tetragon:**
+
+```bash
+sudo docker stop tetragon
+```
 
 ### Detect shell spawned in containers
 
-**1. Download the shell detection rule:**
+**1. Create a shell detection policy:**
 
-```bash
-wget https://raw.githubusercontent.com/tsadimasteaching/efrei/refs/heads/main/container_shell_detect.yaml
-```
-
-Contents of `container_shell_detect.yaml`:
+Save the following as `container-shell-detect-policy.yaml`:
 
 ```yaml
-- rule: Shell in Container
-  desc: Detect an interactive shell spawned inside a container
-  condition: >
-    container and proc.name in (bash, sh, zsh, ash) and
-    evt.type = execve and
-    not proc.pname in (docker, containerd, entrypoint)
-  output: >
-    Interactive shell detected inside container
-    (container=%container.name command=%proc.cmdline user=%user.name)
-  priority: NOTICE
-  tags: [container, shell, behavioral]
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: shell-in-container
+spec:
+  kprobes:
+  - call: "security_bprm_check"
+    syscall: false
+    args:
+    - index: 0
+      type: "linux_binprm"
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: "Postfix"
+        values:
+        - "/bash"
+        - "/sh"
+        - "/zsh"
+        - "/ash"
+      matchNamespaces:
+      - namespace: Pid
+        operator: NotIn
+        values:
+        - "host_ns"
+      matchActions:
+      - action: Post
 ```
 
-**2. Run Falco with the shell detection rule:**
+**Understanding the policy:**
+
+| Field | Meaning |
+|---|---|
+| `call: "security_bprm_check"` | LSM hook called when a binary is about to execute |
+| `args[0].type: "linux_binprm"` | Capture the binary path |
+| `matchArgs: Postfix` | Match binaries ending in `/bash`, `/sh`, `/zsh`, `/ash` |
+| `matchNamespaces: Pid NotIn host_ns` | Only match processes in a **non-host** PID namespace (i.e., inside containers) |
+
+**2. Run Tetragon with the shell detection policy:**
 
 ```bash
-docker run --rm -it --name falco --privileged \
-  -v /var/run/docker.sock:/host/var/run/docker.sock \
-  -v /dev:/host/dev \
-  -v /proc:/host/proc:ro \
-  -v /boot:/host/boot:ro \
-  -v /lib/modules:/host/lib/modules:ro \
-  -v /usr:/host/usr:ro \
-  -v /etc:/host/etc:ro \
-  -v $(pwd)/container_shell_detect.yaml:/etc/falco/rules.d/container_shell_detect.yaml \
-  falcosecurity/falco:0.40.0
+sudo docker run -d --name tetragon --rm \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v $(pwd)/container-shell-detect-policy.yaml:/etc/tetragon/tetragon.tp.d/container-shell-detect-policy.yaml \
+  quay.io/cilium/tetragon:v1.3.0
 ```
 
-**3. Trigger the alert:**
+**3. Watch for events:**
+
+```bash
+sudo docker exec tetragon tetra getevents -o compact
+```
+
+**4. Trigger the alert:**
 
 In another terminal:
 
@@ -822,9 +996,15 @@ In another terminal:
 docker run --rm -it alpine sh
 ```
 
-Falco will report: `Interactive shell detected inside container`.
+Tetragon will show the shell execution event from inside the container's PID namespace.
 
-### Exercise: Monitor a real application with Falco
+**5. Stop Tetragon:**
+
+```bash
+sudo docker stop tetragon
+```
+
+### Exercise: Monitor a real application with Tetragon
 
 Check and run the Budibase docker-compose:
 
@@ -833,21 +1013,27 @@ wget https://raw.githubusercontent.com/Budibase/budibase/master/hosting/docker-c
 docker compose up -d
 ```
 
-Run Falco and observe the output. You may see alerts like:
+Run Tetragon and observe the output:
 
+```bash
+sudo docker run -d --name tetragon --rm \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  quay.io/cilium/tetragon:v1.3.0
+
+sudo docker exec tetragon tetra getevents -o compact
 ```
-Redirect stdout/stdin to network connection
-(fd.sip=127.0.0.1 connection=127.0.0.1:41048->127.0.0.1:9000
-process=bash command=bash -c :> /dev/tcp/127.0.0.1/9000
-container_name=efrei-minio-service-1)
-```
 
-**Why is this suspicious?**
-- `bash -c ':> /dev/tcp/127.0.0.1/9000'` opens a TCP connection and redirects output — this pattern is commonly used in reverse shells and data exfiltration
-- The `dup2` event indicates file descriptor reassignment, typical in shell redirection attacks
-- It ran as `root` inside the container
+You'll see all process execution events across the Budibase containers. Look for suspicious patterns like:
+- Shells being spawned inside application containers
+- Unexpected binaries executing
+- Network-related processes starting
 
-> Even loopback connections can be early stages of attack chains. Falco helps you identify these patterns in production.
+> **Tetragon vs Falco:** Tetragon uses pure eBPF (no kernel modules), has lower overhead, and integrates natively with Kubernetes via CRDs. Falco has a larger rule library and more community rules. Both are excellent for runtime security monitoring.
 
 ---
 

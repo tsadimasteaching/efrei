@@ -931,15 +931,15 @@ Use runtime security (gVisor, Kata Containers), drop unnecessary capabilities, u
 
 ```bash
 # Default container -- see what's exposed
-docker run --rm ghcr.io/genuinetools/amicontained
+docker run --rm jess/amicontained amicontained
 
 # Privileged container -- everything is open
-docker run --rm --privileged ghcr.io/genuinetools/amicontained
+docker run --rm --privileged jess/amicontained amicontained
 
 # Hardened container -- minimal attack surface
 docker run --rm --cap-drop=ALL --security-opt=no-new-privileges \
   --security-opt seccomp=default.json \
-  ghcr.io/genuinetools/amicontained
+  jess/amicontained amicontained
 ```
 
 Compare the output across all three: capabilities, seccomp status, namespaces, and blocked syscalls.
@@ -1263,13 +1263,14 @@ By limiting the syscalls a process can use, you reduce the attack surface -- whi
 - No kernel modules or agents required -- runs safely in-kernel
 
 **Tools:**
+- **Tetragon** -- kernel-level security observability and enforcement (by Cilium/Isovalent, CNCF project)
 - **Falco** -- runtime threat detection using eBPF probes (CNCF project)
-- **Tetragon** -- kernel-level security observability and enforcement (by Cilium/Isovalent)
 - **Tracee** -- runtime security and forensics using eBPF (by Aqua Security)
 
 ```bash
-# Example: Falco detects shell spawned in container
-falco -r /etc/falco/falco_rules.yaml
+# Example: Tetragon detects shell spawned in container
+sudo docker exec tetragon tetra getevents -o compact
+🚀 process default/alpine /bin/sh
 ```
 
 > eBPF is to runtime security what image scanning is to build security.
@@ -1465,4 +1466,4 @@ Rootless mode executes the Docker daemon and containers inside a user namespace.
 | **Run** | Apply Seccomp and AppArmor/SELinux profiles |
 | **Run** | Use network policies to restrict traffic |
 | **Run** | Store secrets in external secret stores (Vault) |
-| **Monitor** | Enable eBPF-based runtime detection (Falco, Tetragon) |
+| **Monitor** | Enable eBPF-based runtime detection (Tetragon, Falco) |

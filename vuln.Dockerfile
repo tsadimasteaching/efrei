@@ -1,5 +1,5 @@
 # 🐧 Base image with known vulnerabilities
-FROM ubuntu:20.04
+FROM debian:latest
 
 # 🙈 Intentionally run as root (default, but we won't change it)
 USER root
@@ -20,7 +20,7 @@ RUN apt-get update && \
 RUN echo "AWS_SECRET=1234567890abcdef" > /root/.aws-creds
 
 # Add a demo user
-RUN useradd -m attacker && echo 'attacker:attacker' | chpasswd && adduser attacker sudo
+RUN useradd -m attacker && echo 'attacker:attacker' | chpasswd && usermod -aG sudo attacker
 
 # Expose a file with sensitive info
 COPY secret.txt /etc/secret.txt
