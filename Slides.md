@@ -78,7 +78,7 @@ style: |
 
 # Container Security
 
-## dive into kernel foundations
+## From Kernel Foundations to Production
 
 ---
 
@@ -192,6 +192,8 @@ It is the process of creating a virtual representation of something based on sof
 - **OCI** provides specifications for container images and running containers
 - **runc** is an OCI-compliant tool for spawning and running containers
 
+> **Note:** In a Kubernetes cluster, only **one** high-level runtime (containerd **or** CRI-O) is configured per node -- they are alternatives, not used simultaneously.
+
 </div>
 </div>
 
@@ -206,6 +208,8 @@ It is the process of creating a virtual representation of something based on sof
 
 ---
 
+<!-- _class: medium -->
+
 # Containerd vs CRI-O
 
 **containerd**
@@ -217,6 +221,8 @@ containerd is a high-level container runtime that came from Docker. It implement
 CRI-O is another high-level container runtime which implements the Kubernetes Container Runtime Interface (CRI). It's an alternative to containerd.
 
 Detect which one is used in kubernetes: `kubectl get nodes -o wide`
+
+> **dockershim removed in Kubernetes 1.24+** (2022): Kubernetes can no longer talk to Docker directly. If you still need Docker Engine as a runtime, you must use **cri-dockerd** -- a standalone CRI adapter. Most clusters have migrated to containerd or CRI-O.
 
 
 
@@ -545,6 +551,8 @@ docker run --cap-drop ALL --cap-add NET_BIND_SERVICE myapp
 ```
 
 This drops all privileges, then only adds the ability to bind to low ports.
+
+> **Common misconception:** Dropping all capabilities does **not** prevent a process from reading/writing files. Standard Linux file permissions (UID/GID) still apply independently. A root process with zero capabilities can still read `/etc/shadow` if file permissions allow it. Capabilities control *kernel-level operations* (binding low ports, loading modules), not basic file I/O.
 
 ---
 
@@ -1373,7 +1381,7 @@ While both are essential for securing the build process, they serve very differe
 | **Action** | "Patch this specific library" | "I know exactly what is inside this image" |
 | **Key tools** | Trivy, Grype, Snyk, Docker Scout | Syft, Tern, Microsoft sbom-tool |
 
-> Use **both**: scanning catches today's known threats; SBOM prepares you for tomorrow's.
+> **A clean scan does NOT mean an image is "secure."** It only means no *currently known* CVEs were found. An SBOM is the only way to perform rapid incident response when tomorrow's zero-day drops (like Log4Shell) -- you query the SBOM database instead of re-scanning every image. Use **both**: scanning catches today's known threats; SBOM prepares you for tomorrow's.
 
 ---
 
@@ -1455,6 +1463,20 @@ Kubernetes integration:
 
 ---
 
+<!-- _class: xsmall -->
+
+# How Secrets Reach the Application
+
+The app never talks to Vault directly -- a **sidecar** or **init container** handles authentication and secret delivery.
+
+![h:380](./img/vault-secrets.svg)
+
+**Two common patterns:**
+- **Init Container** -- fetches secrets once at startup, writes to a shared `emptyDir` volume
+- **Sidecar** -- runs alongside the app, continuously refreshes secrets (handles rotation)
+
+---
+
 # Set Permissions on Files
 
 Prevents unintended access.
@@ -1499,6 +1521,43 @@ Signing images is one piece -- **Supply-chain Levels for Software Artifacts** (S
 - Pin dependencies by digest, not tag
 
 https://slsa.dev
+
+---
+
+<!-- _class: xsmall -->
+
+# SLSA: What Does Provenance Look Like?
+
+A provenance attestation is a signed JSON document that records **who** built the image, **how**, and **from what source** -- it proves the image wasn't tampered with after the build.
+
+```json
+{
+  "_type": "https://in-toto.io/Statement/v0.1",
+  "subject": [
+    { "name": "myapp", "digest": { "sha256": "abc123..." } }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://github.com/actions/runner",
+      "externalParameters": {
+        "source": "git+https://github.com/org/myapp@refs/heads/main",
+        "builderImage": "docker.io/library/golang:1.22"
+      }
+    },
+    "runDetails": {
+      "builder": { "id": "https://github.com/actions/runner/v2" },
+      "metadata": { "buildStartedOn": "2026-04-10T14:30:00Z" }
+    }
+  }
+}
+```
+
+```bash
+# Generate and verify provenance with Cosign
+cosign attest --predicate provenance.json --type slsaprovenance myapp:1.0
+cosign verify-attestation --type slsaprovenance myapp:1.0
+```
 
 ---
 
@@ -1632,8 +1691,9 @@ Both are kernel-level security features that restrict what a process can do, but
 
 **eBPF** (Extended Berkeley Packet Filter) allows running sandboxed programs in the Linux kernel without modifying kernel code -- the modern approach to runtime security monitoring.
 
-- Goes beyond Seccomp: observe **file access**, **network connections**, **process execution**, **privilege escalation** in real time
-- No kernel modules or agents required -- runs safely in-kernel
+- **Not just another syscall filter like Seccomp.** eBPF attaches to **kprobes**, **tracepoints**, and **LSM hooks** deep inside the kernel -- it can observe file access, network connections, process execution, and privilege escalation at points that Seccomp and LSMs cannot reach
+- Operates **earlier or deeper** than standard LSM hooks (AppArmor/SELinux) depending on the probe type
+- No kernel modules or agents required -- runs safely in-kernel with a built-in verifier
 
 **Tools:**
 - **Tetragon** -- kernel-level security observability and enforcement (by Cilium/Isovalent, CNCF project)
@@ -1646,7 +1706,7 @@ sudo docker exec tetragon tetra getevents -o compact
 🚀 process default/alpine /bin/sh
 ```
 
-> eBPF is to runtime security what image scanning is to build security.
+> eBPF is a **programmable engine** inside the kernel, not a static filter. It can monitor almost any internal kernel event.
 
 ---
 
@@ -1654,7 +1714,7 @@ sudo docker exec tetragon tetra getevents -o compact
 
 # Seccomp vs eBPF Security
 
-Seccomp and eBPF both operate at the syscall level, but they serve fundamentally different roles:
+While Seccomp is a static filter at the syscall entry point, eBPF is a programmable engine that attaches to **kprobes, tracepoints, and LSM hooks** throughout the kernel -- they operate at fundamentally different layers:
 
 | Feature | Seccomp | eBPF Security |
 |---|---|---|
@@ -1831,6 +1891,8 @@ Map container users to non-privileged users on the host.
 Prevents root in the container from being root on the host.
 
 Docker: `--userns=host` or `--userns-remap`
+
+> **Common misconception:** User namespaces do **not** make a container as secure as a VM. You still share the host kernel -- a single kernel zero-day can compromise all containers regardless of namespace isolation. User namespaces reduce the *blast radius* of a compromise, but the shared kernel remains a single point of failure.
 
 ---
 
