@@ -89,20 +89,20 @@ style: |
 - Containers Standards
 - Docker Commands Cheatsheet
 - Container Internals: The Kernel Foundations
+  - Linux Capabilities
   - Namespaces
   - Control Groups
-  - Linux Capabilities
   - OverlayFS
 - Attack Surface
 - Securing the Container Build Process
 - Securing the Container Runtime Process
-- Security Tools: eBPF & Tetragon
+  - Seccomp, AppArmor, SELinux, eBPF
 - Container Sandboxing Approaches
 
 ---
 <!-- _class: small -->
 
-# Virtualization
+# Virtualization: Resource Sharing
 
 <div class="columns">
 <div class="col">
@@ -126,7 +126,7 @@ Pretend that we have many CPUs
 
 <!-- _class: small -->
 
-# Virtualization
+# Virtualization: Virtual Machines
 
 <div class="columns">
 <div class="col">
@@ -146,7 +146,7 @@ It is the process of creating a virtual representation of something based on sof
 
 ---
 
-# Virtualization
+# Virtualization: Types
 
 
 
@@ -160,7 +160,7 @@ It is the process of creating a virtual representation of something based on sof
 
 ---
 
-<!-- _class: small -->
+<!-- _class: medium -->
 # Container Standards
 
 **Open Container Initiative** (OCI): a set of standards for containers, describing the image format, runtime, and distribution.
@@ -218,28 +218,7 @@ CRI-O is another high-level container runtime which implements the Kubernetes Co
 
 Detect which one is used in kubernetes: `kubectl get nodes -o wide`
 
----
 
-<!-- _class: small -->
-
-# Dockershim Deprecation
-
-Kubernetes **removed the Dockershim** in version **1.24** (May 2022).
-
-- Dockershim was a compatibility layer that allowed Kubernetes to use Docker as a container runtime
-- Docker itself is **not CRI-compliant** -- it was never designed for Kubernetes' Container Runtime Interface
-- Kubernetes now requires a **CRI-compliant runtime** directly: **containerd** or **CRI-O**
-
-> Containers built with Docker still work -- only the runtime interface changed. Docker images are OCI-compliant and compatible with any CRI runtime.
-
-```
-# Before (with Dockershim):
-kubelet -> dockershim -> docker -> containerd -> runc
-
-# After (direct CRI):
-kubelet -> containerd -> runc
-kubelet -> CRI-O -> runc
-```
 
 ---
 <!-- _class: small -->
@@ -303,7 +282,7 @@ runc is a tool for running containers on Linux. On Windows, the equivalent is Mi
 | Resource Management | YES | YES |
 
 ---
-<!-- _class: small -->
+<!-- _class: medium -->
 
 # Alternatives
 
@@ -474,8 +453,8 @@ You can also prevent it from being used with the `--no-new-privileges` flag on a
 
 ---
 
-<!-- _class: small -->
-# Linux Capabilities
+<!-- _class: medium -->
+# Linux Capabilities: Overview
 
 ![h:300](./img/linux-cap.png)
 
@@ -495,7 +474,7 @@ There are two ways a process can obtain a set of capabilities:
 
 ---
 
-# Linux Capabilities
+# Linux Capabilities: Decoding
 
 ```bash
 $ ps
@@ -518,7 +497,7 @@ $ getpcaps 142586
 
 ---
 
-# Linux Capabilities - how to?
+# Linux Capabilities: Capability Sets
 
 - **CapInh** -- Inherited - Which capabilities can be passed from parent to child processes during exec()
 - **CapPrm** -- Permitted - What the process is allowed to make effective or pass to child processes
@@ -569,7 +548,7 @@ This drops all privileges, then only adds the ability to bind to low ports.
 
 ---
 
-# Linux Capabilities
+# Linux Capabilities: capsh Demo
 
 The `capsh` command can run a particular process and restrict the set of available capabilities.
 
@@ -601,7 +580,12 @@ If we drop the `CAP_NET_RAW` capabilities for ping, then the ping utility should
 
 ---
 
-# Docker is based on
+<!-- _class: title -->
+
+# Container Basics
+---
+
+# Containers are based on
 
 ![h:300](./img/ns-cgroups.png)
 
@@ -636,7 +620,7 @@ unshare --user --pid --map-root-user --mount-proc --fork bash
 
 ---
 
-<!-- _class: small -->
+<!-- _class: medium -->
 
 # User namespace
 
@@ -756,8 +740,8 @@ ps   # only sees processes in this namespace
 ![w:100%](./img/ipc-ns.png)
 
  
-- Isolates hostname and domain name
-- Containers can have custom hostnames different from the host system
+- Isolates inter-process communication resources (shared memory, semaphores, message queues)
+- Processes in one IPC namespace cannot see or interact with IPC objects in another
 
 The IPC namespace provides isolation for process communication mechanisms such as semaphores, message queues, shared memory segments, etc. Normally when a process is forked it inherits all the IPC’s which were opened by its parent. The processes inside an IPC namespace can't see or interact with the IPC resources of the upper namespace.
 
@@ -883,8 +867,8 @@ docker info | grep "Storage Driver"
 # See the layers of an image
 docker inspect ubuntu --format '{{json .RootFS.Layers}}' | python3 -m json.tool
 
-# See overlay mounts of a running container
-docker inspect <container> --format '{{.GraphDriver.Data.MergedDir}}'
+# See overlay mounts of a running container (from inside)
+docker exec <container> cat /proc/1/mountinfo | grep overlay
 ```
 
 **Security implications:**
@@ -921,7 +905,7 @@ what is different is each linux distro?
 # Linux vs Windows
 
 
-![w:100%](./img/linux-win.png)
+![w:1200](./img/linux-win.png)
 
 
 
@@ -971,7 +955,7 @@ Since containers share a kernel with the host, running Linux containers directly
 
 ---
 
-<!-- _class: xsmall -->
+<!-- _class: medium -->
 
 # Attack Surface Overview
 
@@ -1030,7 +1014,7 @@ Keep the host OS and kernel up to date. Use security modules like SELinux/AppArm
 
 ---
 
-<!-- _class: small -->
+<!-- _class: medium -->
 
 # Attack via Host Application Vulnerabilities
 
@@ -1048,7 +1032,7 @@ Keep the host OS and kernel up to date. Use security modules like SELinux/AppArm
 
 ---
 
-<!-- _class: small -->
+<!-- _class: medium -->
 
 # Attack via Container Orchestration Vulnerabilities
 
@@ -1072,7 +1056,7 @@ curl -k https://<k8s-api>:6443/api/v1/pods
 
 ---
 
-<!-- _class: small -->
+<!-- _class: medium -->
 
 # Attack via Compromised Container Images
 
@@ -1368,6 +1352,49 @@ Formats: **SPDX**, **CycloneDX**
 
 ---
 
+<!-- _class: xsmall -->
+# Image Scanning vs SBOM
+
+While both are essential for securing the build process, they serve very different roles.
+
+**SBOM** is a **manifest** (the "ingredients list") — a structured record of every library, package version, and dependency inside your image, even those currently considered safe.
+
+**Image Scanning** is an **audit** (checking for "known poisons") — comparing image contents against a database of known vulnerabilities (CVEs).
+
+**Scanning is point-in-time:** a scan tells you if your image is vulnerable *today*. If a new zero-day is discovered tomorrow, yesterday's scan is obsolete.
+
+**SBOM is persistent & proactive:** when a new vulnerability (like Log4j) is announced, you don't need to re-scan thousands of images — you query your SBOM database to find which images contain that specific library version.
+
+| Feature | Image Scanning | SBOM |
+|---|---|---|
+| **Goal** | Find known vulnerabilities (CVEs) | Provide a complete inventory of components |
+| **Output** | Report of high/medium/low risks | A file (SPDX / CycloneDX) listing all parts |
+| **When to use** | During CI/CD and at runtime | Created at build time, stored for lifecycle |
+| **Action** | "Patch this specific library" | "I know exactly what is inside this image" |
+| **Key tools** | Trivy, Grype, Snyk, Docker Scout | Syft, Tern, Microsoft sbom-tool |
+
+> Use **both**: scanning catches today's known threats; SBOM prepares you for tomorrow's.
+
+---
+
+<!-- _class: small -->
+# Secure Build Chain of Trust
+
+A modern secure build pipeline combines all the tools into a verifiable **chain of trust**:
+
+![](./img/sbom.png)
+
+| Step | Tool | Purpose |
+|---|---|---|
+| **Build** | `docker build` | Create the container image |
+| **Generate SBOM** | `syft`, `trivy --format spdx-json` | Record every component and version |
+| **Scan for CVEs** | `trivy`, `grype` | Detect known vulnerabilities — gate the pipeline |
+| **Sign** | `cosign sign` | Prove the image and SBOM haven't been tampered with |
+
+> In high-security environments, deployment is **blocked** unless an image has a valid signature and a clean scan. This is the foundation of **SLSA** (Supply-chain Levels for Software Artifacts).
+
+---
+
 <!-- _class: medium -->
 # Use .dockerignore File
 
@@ -1577,6 +1604,28 @@ By limiting the syscalls a process can use, you reduce the attack surface -- whi
 
 ---
 
+<!-- _class: small -->
+
+# Capabilities vs Seccomp
+
+Both are kernel-level security features that restrict what a process can do, but they operate at **different layers**.
+
+**Capabilities** manage **privileges** (permissions) — "Can I do X?"
+**Seccomp** manages the **interface** (syscalls) — "Can I use syscall Y?"
+
+| Feature | Linux Capabilities | Seccomp |
+|---|---|---|
+| **Primary goal** | De-privileging root | Reducing kernel attack surface |
+| **Logic** | "Does this process have permission to do X?" | "Is this process allowed to call syscall Y?" |
+| **Configuration** | Adding/dropping from a list | JSON profiles defining allowed/blocked syscalls |
+| **Example** | `CAP_NET_BIND_SERVICE` allows binding to port 80 | Blocking `execve` prevents running new programs |
+| **Granularity** | ~40 capability groups | ~300+ individual syscalls |
+| **Docker usage** | `--cap-drop=ALL --cap-add=...` | `--security-opt seccomp=profile.json` |
+
+> They are **complementary**: a process might have `CAP_NET_RAW` (capability to use raw sockets), but seccomp can still block the `socket()` syscall. Use both for defense in depth.
+
+---
+
 <!-- _class: medium -->
 
 # eBPF for Runtime Security
@@ -1601,7 +1650,26 @@ sudo docker exec tetragon tetra getevents -o compact
 
 ---
 
-<!-- _class: xsmall -->
+<!-- _class: small -->
+
+# Seccomp vs eBPF Security
+
+Seccomp and eBPF both operate at the syscall level, but they serve fundamentally different roles:
+
+| Feature | Seccomp | eBPF Security |
+|---|---|---|
+| **Primary role** | A static **gatekeeper** that blocks syscalls | A dynamic **observer** that monitors and acts on syscalls |
+| **Action** | Hard deny — kills the process if it uses a forbidden syscall | Context-aware — can log, alert, or block based on syscall **arguments** |
+| **Awareness** | Binary: "Is this syscall allowed? Yes/No" | Rich: "Who called it, with what args, from which container?" |
+| **Configuration** | JSON profiles listing allowed/blocked syscalls | TracingPolicies with selectors, argument filters, namespace matching |
+| **Overhead** | Near zero (in-kernel BPF filter) | Very low (in-kernel eBPF programs) |
+| **Analogy** | A fixed metal gate | A smart security camera with automated response |
+
+> **Use both together:** Seccomp blocks dangerous syscalls at the gate (e.g., `mount`, `kexec_load`). eBPF tools like Tetragon **monitor allowed syscalls** for suspicious patterns (e.g., a web server calling `execve("/bin/sh")`).
+
+---
+
+<!-- _class: medium -->
 
 # Tetragon in Production
 
@@ -1687,9 +1755,9 @@ It checks every action before it happens and asks:
 
 ---
 
-<!-- _class: small -->>
+<!-- _class: small -->
 
-# SELinux vs AppArmor
+# Seccomp vs AppArmor vs SELinux
 
 | Feature | Seccomp | AppArmor | SELinux |
 |---|---|---|---|
@@ -1703,6 +1771,32 @@ It checks every action before it happens and asks:
 | **Enforcement** | Kill or errno on denied syscall | Enforce or complain mode | Enforcing, permissive, or disabled |
 | **Logging** | Via audit subsystem | Via AppArmor logs (`/var/log/syslog`) | Via AVC messages in audit log |
 | **Integration** | Docker, K8s, containerd | Docker, K8s, Snap, LXD | OpenShift, K8s, Podman, libvirt |
+
+---
+
+<!-- _class: small -->
+
+# Seccomp vs AppArmor vs eBPF
+
+**Execution order** -- each layer filters before the next:
+
+```
+Process  →  Seccomp  →  AppArmor/SELinux  →  eBPF  →  Kernel
+           (syscall     (resource access      (observe +
+            filter)      policy)               enforce)
+```
+
+| | **Seccomp** | **AppArmor** | **eBPF** |
+|---|---|---|---|
+| **What** | Blocks/allows **syscalls** | Controls **resource access** (files, net, caps) | Monitors & enforces **any kernel event** |
+| **Layer** | Syscall entry (BPF filter) | LSM hooks | Kernel-wide (kprobes, tracepoints, LSM) |
+| **Logic** | Allowlist / denylist of syscall numbers | Per-program path-based profiles | Programmable (C/Go → bytecode) |
+| **Action** | Allow, kill, errno, trap | Allow, deny, audit | Log, alert, kill, override return |
+| **Scope** | Per-process | Per-binary / per-container | Cluster-wide (via Tetragon/Cilium) |
+
+> **Analogy**: Seccomp is the **gate** (blocks entire syscall types), AppArmor is the **bouncer** (checks if *this program* can access *this resource*), eBPF is the **security camera with a trigger** (watches everything, can act).
+
+Docker applies **all three by default**: default seccomp profile + default AppArmor profile + eBPF-based monitoring available via Tetragon.
 
 ---
 
@@ -1727,47 +1821,6 @@ It checks every action before it happens and asks:
 - A kernel exploit inside the container does **not** affect the host
 
 > Choose soft multi-tenancy for performance, hard multi-tenancy for stronger isolation (e.g., multi-tenant clouds).
-
----
-
-# Linux Security Modules (LSMs)
-
-**AppArmor**
-- Uses profiles to restrict system calls and file access per application/container
-- Easier to configure and audit
-- Default in Ubuntu
-
-**SELinux**
-- Provides fine-grained Mandatory Access Control (MAC)
-- More complex than AppArmor but more powerful
-- Default in Red Hat-based systems
-
----
-
-# Seccomp (Secure Computing Mode)
-
-- Filters system calls a container can make
-- Allows or denies syscalls using profiles (JSON)
-- Useful for reducing kernel attack surface
-
-Example:
-```bash
-docker run --security-opt seccomp=profile.json myimage
-```
-
----
-
-# Capabilities Dropping
-
-**Capabilities** = a **keyring** -- each key grants permission to perform a specific privileged action (e.g., bind to low ports, change file ownership). You add or remove keys.
-
-**Seccomp** = a **gatekeeper** -- it filters the specific requests (syscalls) a process makes to the kernel. Even if you have the key, the gatekeeper can block the door.
-
-> They are complementary: capabilities control **what you're allowed to do**, seccomp controls **how you can ask the kernel to do it**.
-
-```bash
-docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE myimage
-```
 
 ---
 
