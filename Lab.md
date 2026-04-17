@@ -1,8 +1,14 @@
 # Securing Containers
 
+
 **Author:** Anargyros Tsadimas
 
 **Role:** Assistant Professor, DevOps & Software Engineer
+
+**Scope:** 5-Day study mission program
+for Efrei MSc students
+20/4/2026-24/4/2026
+
 
 ---
 
@@ -924,8 +930,12 @@ cd fastapi-intro
 **Build and scan the unhardened image:**
 
 ```bash
-docker build -f no-rules.Dockerfile -t no-rules .
+docker build -f no-rules.Dockerfile -t fastapi.Dockerfile .
 trivy image --security-checks vuln,config,secret no-rules
+# or you can get the count of findings for each category
+trivy image --scanners vuln,config,secret --format json no-rules | \
+jq '.Results[]? | .Vulnerabilities[]?, .Misconfigurations[]?, .Secrets[]? | .Severity' | \
+sort | uniq -c
 ```
 
 **Apply the full set of security rules:**
