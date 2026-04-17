@@ -304,49 +304,82 @@ Confirm the limits were applied:
 cat /sys/fs/cgroup/my_cgroup/memory.max
 ```
 
-**3. Create an isolated namespace and associate it with the cgroup**
+**3. Put your current shell into the cgroup**
 
-Launch a new shell with an isolated PID and mount namespace:
+The simplest way is to write your shell's own PID (`$$`) into the cgroup. All child processes you launch afterwards will inherit the cgroup membership:
 
 ```bash
-sudo unshare --pid --mount --fork bash
+# Run a new bash inside the cgroup
+sudo bash -c 'echo $$ > /sys/fs/cgroup/my_cgroup/cgroup.procs && exec bash'
 ```
 
-Get the PID of the current bash process:
+Verify you are inside the cgroup:
 
 ```bash
-ps -ef | grep bash
-```
-
-Add this process (and any children it spawns) to the cgroup:
-
-```bash
-echo <PID> | sudo tee /sys/fs/cgroup/my_cgroup/cgroup.procs
+cat /proc/self/cgroup
+# Should show: 0::/my_cgroup
 ```
 
 **4. Test the memory limit**
 
+Create a small C program that allocates memory and touches every page (forcing real physical allocation):
+
+```bash
+cat > /tmp/eat_memory.c << 'EOF'
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char *argv[]) {
+    size_t mb = argc > 1 ? atoi(argv[1]) : 150;
+    size_t bytes = mb * 1024 * 1024;
+    printf("Allocating %zu MB...\n", mb);
+    char *p = malloc(bytes);
+    if (!p) { perror("malloc"); return 1; }
+    /* Touch every page to force physical allocation */
+    memset(p, 'A', bytes);
+    printf("Allocated and touched %zu MB successfully\n", mb);
+    free(p);
+    return 0;
+}
+EOF
+gcc -o /tmp/eat_memory /tmp/eat_memory.c
+```
+
 First, try a small allocation that fits within the limit:
 
 ```bash
-python3 -c "a = 'a' * 10 * 1024 * 1024; print('10MB allocated OK')"
+/tmp/eat_memory 50
+# Allocated and touched 50 MB successfully
 ```
 
-This succeeds because 10MB is well under the 100MB limit. Now try allocating more than the limit:
+This succeeds because 50MB is well under the 100MB limit. Now try allocating more than the limit:
 
 ```bash
-python3 -c "a = 'a' * 200 * 1024 * 1024; print('200MB allocated OK')"
+/tmp/eat_memory 150
+# Killed
 ```
 
-The process will be killed by the OOM killer because 200MB exceeds the 100MB cgroup limit.
+The process is killed by the OOM killer because 150MB exceeds the 100MB cgroup limit.
 
-Verify the OOM kill from the host:
+**Verify the OOM kill from the host** (run this in a separate terminal, not inside the cgroup):
 
 ```bash
-sudo dmesg | tail
+sudo dmesg | tail -20
 ```
 
-You should see a message like `Memory cgroup out of memory: Killed process ...`.
+You should see a message like:
+```
+Memory cgroup out of memory: Killed process <PID> (eat_memory)
+```
+
+You can also check the cgroup's OOM counter:
+
+```bash
+cat /sys/fs/cgroup/my_cgroup/memory.events
+```
+
+The `oom_kill` counter should be greater than 0.
 
 **5. Cleanup**
 
