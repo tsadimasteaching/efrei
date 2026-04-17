@@ -1685,7 +1685,7 @@ Both are kernel-level security features that restrict what a process can do, but
 
 ---
 
-<!-- _class: medium -->
+<!-- _class: small -->
 
 # eBPF for Runtime Security
 
