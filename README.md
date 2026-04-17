@@ -17,8 +17,8 @@ This repository contains educational materials for the **Container Security** co
 
 | File | Description |
 |---|---|
-| `slides.md` | Marp slide deck for the course |
-| `Notes.md` | Comprehensive hands-on lab guide |
+| `Slides.md` | Marp slide deck for the course |
+| `Lab.md` | Comprehensive hands-on lab guide |
 | `vuln.Dockerfile` | Deliberately vulnerable Dockerfile for scanning exercises |
 | `no-rules.Dockerfile` | Unhardened Dockerfile for comparison |
 | `rules.Dockerfile` | Hardened Dockerfile with security best practices |
@@ -36,10 +36,10 @@ This repository contains educational materials for the **Container Security** co
 - Ubuntu Server 24.04.2 (VirtualBox) or GitHub Codespaces
 - Tools: `strace`, `trivy`, `grype`, `dive`, `amicontained`
 
-See [Notes.md](Notes.md) for full setup instructions.
+See [Lab.md](Lab.md) for full setup instructions.
 
 export slides to pdf
 
 ```bash
-marp slides.md --pdf --allow-local-files -o slides.pdf
+marp Slides.md --pdf --allow-local-files -o Slides.pdf
 ```
