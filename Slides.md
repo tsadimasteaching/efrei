@@ -92,9 +92,11 @@ style: |
   - Namespaces
   - Control Groups
   - Linux Capabilities
+  - OverlayFS
 - Attack Surface
 - Securing the Container Build Process
 - Securing the Container Runtime Process
+- Security Tools: eBPF & Tetragon
 - Container Sandboxing Approaches
 
 ---

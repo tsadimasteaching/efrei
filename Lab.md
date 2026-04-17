@@ -1,4 +1,4 @@
-# Securing Containers
+# Securing Containers: Laboratory Part
 
 
 **Author:** Anargyros Tsadimas
@@ -9,6 +9,7 @@
 for Efrei MSc students
 20/4/2026-24/4/2026
 
+**Latest version:** https://github.com/tsadimasteaching/efrei/blob/main/Lab.md
 
 ---
 
@@ -31,6 +32,8 @@ for Efrei MSc students
     * [Seccomp](#seccomp)
     * [AppArmor](#apparmor)
     * [Hardening Docker Compose](#hardening-docker-compose)
+* [Part 4: Secure Image Build and Scanning](#part-4-secure-image-build-and-scanning)
+    * [Understanding OverlayFS (Docker's Storage Driver)](#understanding-overlayfs-dockers-storage-driver)
     * [Compare Ubuntu vs Alpine base images](#compare-ubuntu-vs-alpine-base-images)
     * [Build and scan a deliberately vulnerable image](#build-and-scan-a-deliberately-vulnerable-image)
     * [Apply security rules to a real application](#apply-security-rules-to-a-real-application)
@@ -43,6 +46,7 @@ for Efrei MSc students
     * [Detect shell spawned in containers](#detect-shell-spawned-in-containers)
     * [Exercise: Monitor a real application with Tetragon](#exercise-monitor-a-real-application-with-tetragon)
     * [Docker Bench for Security](#docker-bench-for-security)
+* [Part 6: Sandboxing](#part-6-sandboxing)
     * [Rootless Docker](#rootless-docker)
 
 ---
@@ -867,6 +871,109 @@ docker compose -f docker-compose-hardened.yaml down
 ---
 
 ## Part 4: Secure Image Build and Scanning
+
+### Understanding OverlayFS (Docker's Storage Driver)
+
+Docker uses **overlay2** as its default storage driver, built on the Linux kernel's **OverlayFS** — a union filesystem that merges multiple directory layers into a single view:
+
+- **Lower layers** (read-only): each `RUN`, `COPY`, `ADD` instruction in a Dockerfile creates a new layer
+- **Upper layer** (read-write): per-container; writes use **copy-on-write** (CoW) — the file is copied from a lower layer before modification
+- **Merged view**: what the container actually sees as its filesystem
+
+**1. Check your storage driver:**
+
+```bash
+docker info | grep "Storage Driver"
+```
+
+**2. Inspect image layers:**
+
+```bash
+docker pull nginx:alpine
+docker inspect nginx:alpine --format '{{json .RootFS.Layers}}' | python3 -m json.tool
+```
+
+Each SHA256 hash is a layer. Layers are shared across containers using the same image.
+
+**3. See the overlay mount of a running container:**
+
+```bash
+docker run -d --name overlay-test alpine sleep 300
+
+# View the overlay mount details from inside the container
+docker exec overlay-test cat /proc/1/mountinfo | head -1
+```
+
+You'll see a line like:
+```
+... / rw,relatime - overlay overlay rw,lowerdir=.../snapshots/412/fs:.../snapshots/179/fs,upperdir=.../snapshots/413/fs,...
+```
+
+This shows the **lowerdir** (read-only image layers), **upperdir** (container's writable layer), and **workdir** (internal bookkeeping).
+
+```bash
+# Write a file and observe that it only exists in the container layer
+docker exec overlay-test sh -c "echo hello > /test.txt"
+docker exec overlay-test cat /test.txt
+
+# The file lives in the upper (writable) layer — image layers are untouched
+docker diff overlay-test
+```
+
+`docker diff` shows `A /test.txt` (Added) — confirming the write went only to the container's upper layer.
+
+**4. Demonstrate layer leaking (secrets persist in layers):**
+
+```bash
+cat > layer-leak.Dockerfile << 'EOF'
+FROM alpine
+RUN echo "DB_PASSWORD=supersecret" > /secret.txt
+RUN rm /secret.txt
+EOF
+docker build -t layer-leak -f layer-leak.Dockerfile .
+docker history layer-leak
+```
+
+Even though `/secret.txt` was deleted, the layer that created it still exists. You can extract it:
+
+```bash
+docker save layer-leak -o layer-leak.tar
+mkdir layer-leak-extracted && tar -xf layer-leak.tar -C layer-leak-extracted
+
+# List each layer's contents — look for secret.txt
+for layer in $(python3 -c "
+import json
+m = json.load(open('layer-leak-extracted/manifest.json'))
+[print(l) for l in m[0]['Layers']]
+"); do
+  echo "=== $layer ==="
+  tar -tf "layer-leak-extracted/$layer" | head -5
+done
+```
+
+You'll see `secret.txt` in one layer and `.wh.secret.txt` (the whiteout marker) in the next. Extract the secret:
+
+```bash
+# Find which layer has the secret and extract it
+for layer in $(python3 -c "
+import json; m = json.load(open('layer-leak-extracted/manifest.json'))
+[print(l) for l in m[0]['Layers']]
+"); do
+  tar -tf "layer-leak-extracted/$layer" 2>/dev/null | grep -q secret.txt && \
+    echo "Found in: $layer" && \
+    tar -xf "layer-leak-extracted/$layer" -O secret.txt 2>/dev/null
+done
+```
+
+> **Takeaway:** Never put secrets in any Dockerfile layer — even if you delete them in a later layer, they remain in the image history. Use multi-stage builds, `.dockerignore`, or Docker secrets instead.
+
+**5. Cleanup:**
+
+```bash
+docker stop overlay-test && docker rm overlay-test
+docker rmi layer-leak
+rm -rf layer-leak-extracted layer-leak.tar layer-leak.Dockerfile
+```
 
 ### Compare Ubuntu vs Alpine base images
 
