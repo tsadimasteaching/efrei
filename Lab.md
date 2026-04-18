@@ -1603,13 +1603,12 @@ Docker Bench for Security is an official script from Docker that checks your hos
 **1. Run Docker Bench:**
 
 ```bash
-docker run --rm --net host --pid host \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /etc:/etc:ro \
-  -v /usr/lib/systemd:/usr/lib/systemd:ro \
-  -v /etc/docker:/etc/docker:ro \
-  docker/docker-bench-security
+git clone https://github.com/docker/docker-bench-security.git
+cd docker-bench-security
+docker-compose run --rm docker-bench-security
 ```
+
+> **Note:** The pre-built `docker/docker-bench-security` image is out-of-date; cloning and building locally is the recommended approach.
 
 **2. Understand the output:**
 
@@ -1636,12 +1635,7 @@ Start an insecure container, then re-run the benchmark:
 
 ```bash
 docker run -d --name insecure --privileged debian sleep 300
-docker run --rm --net host --pid host \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /etc:/etc:ro \
-  -v /usr/lib/systemd:/usr/lib/systemd:ro \
-  -v /etc/docker:/etc/docker:ro \
-  docker/docker-bench-security
+docker-compose run --rm docker-bench-security
 ```
 
 Look for warnings in **Section 5** about the `insecure` container — it will flag the `--privileged` flag, missing resource limits, and more.
