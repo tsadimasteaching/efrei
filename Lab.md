@@ -851,16 +851,15 @@ services:
     # Prevent privilege escalation
     security_opt:
       - no-new-privileges:true
-    # Resource limits
+    # Resource limits (All limits grouped together)
     deploy:
       resources:
         limits:
           memory: 128M
           cpus: "0.5"
+          pids: 50       # <-- Moved here!
         reservations:
           memory: 64M
-    # Limit number of processes (prevent fork bombs)
-    pids_limit: 50
     # No access to host network
     networks:
       - app-net
@@ -1290,11 +1289,12 @@ Tetragon is an eBPF-based runtime security tool by Cilium/Isovalent. Unlike Falc
 sudo docker run -d --name tetragon --rm \
   --pid=host --cgroupns=host \
   --privileged \
-  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
-  -v /sys/fs/cgroup:/sys/fs/cgroup \
-  -v /sys/kernel/tracing:/sys/kernel/tracing \
-  -v /sys/kernel/debug:/sys/kernel/debug \
-  quay.io/cilium/tetragon:v1.3.0
+  -v /sys/kernel/btf/vmlinux:/var/lib/tetragon/btf:ro \
+  -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+  -v /sys/kernel/tracing:/sys/kernel/tracing:rw \
+  -v /sys/kernel/debug:/sys/kernel/debug:rw \
+  -v /sys/fs/bpf:/sys/fs/bpf:rw \
+  quay.io/cilium/tetragon:v1.6.0 
 ```
 
 **2. Observe events in real time:**
@@ -1377,12 +1377,13 @@ EOF
 sudo docker run -d --name tetragon --rm \
   --pid=host --cgroupns=host \
   --privileged \
-  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
-  -v /sys/fs/cgroup:/sys/fs/cgroup \
-  -v /sys/kernel/tracing:/sys/kernel/tracing \
-  -v /sys/kernel/debug:/sys/kernel/debug \
-  -v $(pwd)/write-etc-policy.yaml:/etc/tetragon/tetragon.tp.d/write-etc-policy.yaml \
-  quay.io/cilium/tetragon:v1.3.0
+  -v /sys/kernel/btf/vmlinux:/var/lib/tetragon/btf:ro \
+  -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+  -v /sys/kernel/tracing:/sys/kernel/tracing:rw \
+  -v /sys/kernel/debug:/sys/kernel/debug:rw \
+  -v /sys/fs/bpf:/sys/fs/bpf:rw \
+  -v $(pwd)/write-etc-policy.yaml:/etc/tetragon/tetragon.tp.d/write-etc-policy.yaml:ro \
+  quay.io/cilium/tetragon:v1.6.0
 ```
 
 **3. Watch for events and trigger:**
@@ -1458,12 +1459,13 @@ EOF
 sudo docker run -d --name tetragon --rm \
   --pid=host --cgroupns=host \
   --privileged \
-  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
-  -v /sys/fs/cgroup:/sys/fs/cgroup \
-  -v /sys/kernel/tracing:/sys/kernel/tracing \
-  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v /sys/kernel/btf/vmlinux:/var/lib/tetragon/btf:ro \
+  -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+  -v /sys/kernel/tracing:/sys/kernel/tracing:rw \
+  -v /sys/kernel/debug:/sys/kernel/debug:rw \
+  -v /sys/fs/bpf:/sys/fs/bpf:rw \
   -v $(pwd)/container-shell-detect-policy.yaml:/etc/tetragon/tetragon.tp.d/container-shell-detect-policy.yaml \
-  quay.io/cilium/tetragon:v1.3.0
+  quay.io/cilium/tetragon:v1.6.0
 ```
 
 **3. Watch for events:**
@@ -1529,12 +1531,13 @@ EOF
 sudo docker run -d --name tetragon --rm \
   --pid=host --cgroupns=host \
   --privileged \
-  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
-  -v /sys/fs/cgroup:/sys/fs/cgroup \
-  -v /sys/kernel/tracing:/sys/kernel/tracing \
-  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v /sys/kernel/btf/vmlinux:/var/lib/tetragon/btf:ro \
+  -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+  -v /sys/kernel/tracing:/sys/kernel/tracing:rw \
+  -v /sys/kernel/debug:/sys/kernel/debug:rw \
+  -v /sys/fs/bpf:/sys/fs/bpf:rw \
   -v $(pwd)/detect-exec-policy.yaml:/etc/tetragon/tetragon.tp.d/detect-exec-policy.yaml \
-  quay.io/cilium/tetragon:v1.3.0
+  quay.io/cilium/tetragon:v1.6.0
 ```
 
 **3. Watch events and replay the Part 2 attack:**
@@ -1576,11 +1579,12 @@ Run Tetragon and observe the output:
 sudo docker run -d --name tetragon --rm \
   --pid=host --cgroupns=host \
   --privileged \
-  -v /sys/kernel/btf/vmlinux:/var/run/tetragon/btf \
-  -v /sys/fs/cgroup:/sys/fs/cgroup \
-  -v /sys/kernel/tracing:/sys/kernel/tracing \
-  -v /sys/kernel/debug:/sys/kernel/debug \
-  quay.io/cilium/tetragon:v1.3.0
+  -v /sys/kernel/btf/vmlinux:/var/lib/tetragon/btf:ro \
+  -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+  -v /sys/kernel/tracing:/sys/kernel/tracing:rw \
+  -v /sys/kernel/debug:/sys/kernel/debug:rw \
+  -v /sys/fs/bpf:/sys/fs/bpf:rw \
+  quay.io/cilium/tetragon:v1.6.0
 
 sudo docker exec tetragon tetra getevents -o compact
 ```
