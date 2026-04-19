@@ -87,7 +87,6 @@ style: |
 
 - Virtualization: Containers vs VMs
 - Containers Standards
-- Docker Commands Cheatsheet
 - Container Internals: The Kernel Foundations
   - Linux Capabilities
   - Namespaces
@@ -151,6 +150,22 @@ It is the process of creating a virtual representation of something based on sof
 
 
 ![h:500](./img/virt-types.png)
+
+---
+# Virtualization via containers
+
+
+
+![h:550](./img/cnt-hyp1.png)
+
+---
+
+# Virtualization via containers via vms
+
+
+
+![h:550](./img/cnt-hyp2.png)
+
 
 ---
 

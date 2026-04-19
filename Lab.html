@@ -1933,13 +1933,13 @@ docker compose up -d
 <h3 id="docker-bench-for-security">Docker Bench for Security</h3>
 <p>Docker Bench for Security is an official script from Docker that checks your host and Docker daemon configuration against the CIS (Center for Internet Security) Docker Benchmark. It audits dozens of best practices in one command — a quick way to find misconfigurations.</p>
 <p><strong>1. Run Docker Bench:</strong></p>
-<pre class="hljs"><code><div>docker run --<span class="hljs-built_in">rm</span> --net host --pid host \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /etc:/etc:ro \
-  -v /usr/lib/systemd:/usr/lib/systemd:ro \
-  -v /etc/docker:/etc/docker:ro \
-  docker/docker-bench-security
+<pre class="hljs"><code><div>git <span class="hljs-built_in">clone</span> https://github.com/docker/docker-bench-security.git
+<span class="hljs-built_in">cd</span> docker-bench-security
+docker-compose run --<span class="hljs-built_in">rm</span> docker-bench-security
 </div></code></pre>
+<blockquote>
+<p><strong>Note:</strong> The pre-built <code>docker/docker-bench-security</code> image is out-of-date; cloning and building locally is the recommended approach.</p>
+</blockquote>
 <p><strong>2. Understand the output:</strong></p>
 <p>The script checks categories based on the CIS Docker Benchmark:</p>
 <table>
@@ -1986,12 +1986,7 @@ docker compose up -d
 <p><strong>3. Test with a running container:</strong></p>
 <p>Start an insecure container, then re-run the benchmark:</p>
 <pre class="hljs"><code><div>docker run -d --name insecure --privileged debian <span class="hljs-built_in">sleep</span> 300
-docker run --<span class="hljs-built_in">rm</span> --net host --pid host \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /etc:/etc:ro \
-  -v /usr/lib/systemd:/usr/lib/systemd:ro \
-  -v /etc/docker:/etc/docker:ro \
-  docker/docker-bench-security
+docker-compose run --<span class="hljs-built_in">rm</span> docker-bench-security
 </div></code></pre>
 <p>Look for warnings in <strong>Section 5</strong> about the <code>insecure</code> container — it will flag the <code>--privileged</code> flag, missing resource limits, and more.</p>
 <p><strong>4. Cleanup:</strong></p>
