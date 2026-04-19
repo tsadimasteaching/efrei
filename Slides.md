@@ -1833,6 +1833,13 @@ It checks every action before it happens and asks:
 
 ---
 
+# All Together
+
+![h:500](./img/all-diag.png)
+
+---
+
+
 <!-- _class: small -->
 
 # Seccomp vs AppArmor vs SELinux
