@@ -556,6 +556,7 @@ Instead of giving full root via setuid, grant only the specific capability neede
 
 ---
 
+
 # Linux Capabilities in containers
 
 By default, containers may run as root but with reduced capabilities, making them safer than full root access.
@@ -782,7 +783,7 @@ The IPC namespace provides isolation for process communication mechanisms such a
 
 ---
 
-<!-- _class: small -->
+<!-- _class: medium -->
 
 # cgroups
 
@@ -936,6 +937,8 @@ what is different is each linux distro?
 
 ---
 
+<!-- _class: medium -->>
+
 # Linux containers on Windows
 
 Since containers share a kernel with the host, running Linux containers directly on Windows isn't possible -- virtualization is required.
@@ -970,11 +973,11 @@ Since containers share a kernel with the host, running Linux containers directly
 # Attack Surface
 
 ---
-<!-- _class: small -->
+<!-- _class: xxsmall -->
 
 # Attack surface
 
-![h:550](./img/surface.png)
+![h:560](./img/surface.png)
 
 ---
 
@@ -1518,16 +1521,16 @@ cosign verify myapp:1.0
 
 ---
 
-<!-- _class: medium -->
+<!-- _class: small -->
 
 # Supply Chain Security (SLSA)
 
 Signing images is one piece -- **Supply-chain Levels for Software Artifacts** (SLSA) provides a framework for end-to-end build integrity.
 
 **SLSA Levels:**
-- **Level 1** -- Documentation of the build process
-- **Level 2** -- Tamper resistance of the build service (signed provenance)
-- **Level 3** -- Hardened build platform (isolated, ephemeral builders)
+- **Level 1** -- Build is scripted (e.g. a CI pipeline); provenance is generated but *not* signed — you know *how* it was built, but can't verify *who* built it
+- **Level 2** -- The CI service signs the provenance, so consumers can verify the artifact came from your pipeline and was not tampered with after the build
+- **Level 3** -- Each build runs in an isolated, ephemeral environment (fresh VM/container, no shared state), making it hard for a compromised step to poison other builds or forge provenance
 
 **Key practices:**
 - Secure CI/CD runners -- compromised build pipelines are a major attack vector
